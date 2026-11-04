@@ -11,4 +11,6 @@ export const schemaStatements: string[] = [
     updated_at TIMESTAMPTZ NOT NULL
   )`,
   `CREATE INDEX IF NOT EXISTS trips_updated_at_idx ON trips (updated_at DESC)`,
+  // Ticket 03: a revision that goes up on every change, for polling.
+  `ALTER TABLE trips ADD COLUMN IF NOT EXISTS revision INTEGER NOT NULL DEFAULT 1`,
 ];

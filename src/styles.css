@@ -10,7 +10,7 @@ body {
   margin: 0;
 }
 
-.start-page {
+.page {
   max-width: 40rem;
   margin: 0 auto;
   padding: 1rem;
@@ -22,19 +22,21 @@ body {
   margin-bottom: 0.5rem;
 }
 
-.new-trip-row {
+.input-row {
+  flex-wrap: wrap;
   display: flex;
   gap: 0.5rem;
 }
 
-.new-trip-row input {
+.input-row input {
+  flex-basis: 12rem;
   flex: 1;
   min-width: 0;
   padding: 0.6rem;
   font-size: 1rem;
 }
 
-.new-trip-row button {
+.input-row button {
   padding: 0.6rem 1rem;
   font-size: 1rem;
 }
@@ -49,10 +51,20 @@ body {
 }
 
 .trip-list li {
+  border-bottom: 1px solid #333;
+}
+
+.trip-list a {
   display: flex;
   flex-direction: column;
   padding: 0.75rem 0;
-  border-bottom: 1px solid #333;
+  color: inherit;
+  text-decoration: none;
+}
+
+.trip-list a:hover .trip-name,
+.trip-list a:focus-visible .trip-name {
+  text-decoration: underline;
 }
 
 .trip-name {
@@ -62,4 +74,75 @@ body {
 .trip-changed {
   font-size: 0.875rem;
   opacity: 0.7;
+}
+
+a {
+  color: #8fd3ff;
+}
+
+button {
+  cursor: pointer;
+}
+
+button.secondary {
+  background: transparent;
+  color: inherit;
+  border: 1px solid #555;
+}
+
+button.danger {
+  background: #8b1e1e;
+  color: #fff;
+  border: 1px solid #b33;
+  padding: 0.6rem 1rem;
+  font-size: 1rem;
+}
+
+.back-link {
+  display: inline-block;
+  padding: 0.5rem 0;
+}
+
+.trip-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.trip-header h1 {
+  margin-right: auto;
+  overflow-wrap: anywhere;
+}
+
+.trip-header button {
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+}
+
+.rename-trip {
+  margin: 1.5rem 0;
+}
+
+.rename-trip label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.danger-zone {
+  margin-top: 3rem;
+  padding-top: 1rem;
+  border-top: 1px solid #333;
+}
+
+.confirm-delete {
+  padding: 1rem;
+  border: 1px solid #b33;
+  border-radius: 0.5rem;
+  background: #2a1414;
+}
+
+.confirm-delete p {
+  margin-top: 0;
 }

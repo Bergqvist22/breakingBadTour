@@ -39,6 +39,7 @@ export async function handleWebRequest(api: TripApi, request: Request): Promise<
   const bodyText = request.method === "GET" || request.method === "HEAD" ? "" : await request.text();
 
   const response = await dispatch(api, request.method, path, bodyText);
+  if (response.status === 204) return new Response(null, { status: 204 });
   return Response.json(response.body, { status: response.status });
 }
 
@@ -56,6 +57,7 @@ export function createNodeApiMiddleware(getApi: () => TripApi) {
 
     const response = await dispatch(getApi(), req.method ?? "GET", url.pathname, await readNodeBody(req));
     res.statusCode = response.status;
+    if (response.status === 204) return void res.end();
     res.setHeader("Content-Type", "application/json");
     res.end(JSON.stringify(response.body));
   };
