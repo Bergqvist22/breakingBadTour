@@ -4,12 +4,12 @@
 
 **Blocked by:** None — can start immediately
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] The app runs locally with one command and serves the start page plus the Trip API
-- [ ] The Trip API can create a Trip (non-empty name required) and list Trips with their name and last-changed time, most recently changed first
-- [ ] The start page shows the Trip list and a "Cook up a new Trip" form; a new Trip appears in the list right after it's created
-- [ ] The Trip store has an in-memory implementation and a Postgres implementation behind the same interface, plus a way to create the Postgres tables
-- [ ] The app uses the in-memory store when no database connection is configured
-- [ ] Trip API tests run against the in-memory store and cover create, the empty-name rejection, and list ordering
-- [ ] A short README explains how to run the app and the tests locally
+- [x] The app runs locally with one command and serves the start page plus the Trip API
+- [x] The Trip API can create a Trip (non-empty name required) and list Trips with their name and last-changed time, most recently changed first
+- [x] The start page shows the Trip list and a "Cook up a new Trip" form; a new Trip appears in the list right after it's created
+- [x] The Trip store has an in-memory implementation and a Postgres implementation behind the same interface, plus a way to create the Postgres tables
+- [x] The app uses the in-memory store when no database connection is configured
+- [x] Trip API tests run against the in-memory store and cover create, the empty-name rejection, and list ordering
+- [x] A short README explains how to run the app and the tests locally
