@@ -17,11 +17,13 @@ With no database configured, the app uses an in-memory Trip store that resets wh
 DATABASE_URL=postgres://...
 ```
 
-and create the tables once:
+and create the tables:
 
 ```sh
 DATABASE_URL=postgres://... npm run db:migrate
 ```
+
+The migration is idempotent. Re-run it after pulling changes that touch `server/store/schema.ts`.
 
 ## Tests and checks
 
@@ -34,7 +36,7 @@ npm run build
 
 ## Layout
 
-- `src/` — the React web app. It only ever talks to `/api`.
+- `src/` — the React web app. It only ever talks to `/api`. Pages: `/` (start page) and `/trips/:id` (a Trip), routed by the small `src/router.ts`; `src/usePolling.ts` polls every 3 seconds.
 - `shared/` — JSON types shared by the web app and the Trip API.
 - `server/tripApi.ts` — the Trip API: a plain `handle({ method, path, body })` function, the single test seam.
 - `server/tripService.ts` — the rules (validation, ordering, timestamps).

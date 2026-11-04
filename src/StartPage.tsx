@@ -1,30 +1,45 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import type { TripDto } from "../shared/apiTypes";
+import { followLink, navigate, tripUrl } from "./router";
 import { tripApiClient } from "./tripApiClient";
+import { usePolling } from "./usePolling";
 
 const lastChangedFormat = new Intl.DateTimeFormat("en", { dateStyle: "medium", timeStyle: "short" });
 
-/** The start page: every Trip, most recently changed first, and a form to cook up a new one. */
+/** Changes whenever a Trip is added, removed, reordered or changed (its revision moves). */
+const listSignature = (trips: TripDto[]) => trips.map((trip) => `${trip.id}@${trip.revision}`).join(",");
+
+/**
+ * The start page: every Trip, most recently changed first, and a form to cook up a new one.
+ * Polls every 3 seconds and only re-renders when the list actually changed.
+ */
 export function StartPage() {
   const [trips, setTrips] = useState<TripDto[] | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [createError, setCreateError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
+  const shownSignature = useRef<string | null>(null);
 
-  async function refresh() {
+  const refresh = useCallback(async () => {
     try {
       const list = await tripApiClient.listTrips();
-      setTrips(list.trips);
+      const signature = listSignature(list.trips);
+      if (signature !== shownSignature.current) {
+        shownSignature.current = signature;
+        setTrips(list.trips);
+      }
       setLoadError(null);
     } catch (error) {
       setLoadError((error as Error).message);
     }
-  }
+  }, []);
 
   useEffect(() => {
     void refresh();
-  }, []);
+  }, [refresh]);
+
+  usePolling(refresh);
 
   async function onCreate(event: FormEvent) {
     event.preventDefault();
@@ -34,24 +49,21 @@ export function StartPage() {
     }
     setCreating(true);
     try {
-      await tripApiClient.createTrip(name);
-      setName("");
-      setCreateError(null);
-      await refresh();
+      const trip = await tripApiClient.createTrip(name);
+      navigate(tripUrl(trip.id));
     } catch (error) {
       setCreateError((error as Error).message);
-    } finally {
       setCreating(false);
     }
   }
 
   return (
-    <main className="start-page">
+    <main className="page">
       <h1>Breaking Bad Tour</h1>
 
       <form className="new-trip" onSubmit={onCreate}>
         <label htmlFor="new-trip-name">Cook up a new Trip</label>
-        <div className="new-trip-row">
+        <div className="input-row">
           <input
             id="new-trip-name"
             value={name}
@@ -75,8 +87,10 @@ export function StartPage() {
           <ul className="trip-list">
             {trips.map((trip) => (
               <li key={trip.id}>
-                <span className="trip-name">{trip.name}</span>
-                <span className="trip-changed">Changed {lastChangedFormat.format(new Date(trip.updatedAt))}</span>
+                <a href={tripUrl(trip.id)} onClick={followLink}>
+                  <span className="trip-name">{trip.name}</span>
+                  <span className="trip-changed">Changed {lastChangedFormat.format(new Date(trip.updatedAt))}</span>
+                </a>
               </li>
             ))}
           </ul>

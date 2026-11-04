@@ -5,6 +5,8 @@ export interface TripDto {
   name: string;
   /** ISO 8601 timestamp of the last change. */
   updatedAt: string;
+  /** Goes up on every change to the Trip; compare it to tell whether anything changed. */
+  revision: number;
 }
 
 export interface TripListDto {

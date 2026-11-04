@@ -39,6 +39,8 @@ export function createTestApi(options: TestApiOptions = {}) {
   return {
     get: (path: string) => send("GET", path),
     post: (path: string, body?: unknown) => send("POST", path, body),
+    patch: (path: string, body?: unknown) => send("PATCH", path, body),
+    delete: (path: string) => send("DELETE", path),
     send,
   };
 }

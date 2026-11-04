@@ -1,6 +1,6 @@
 import type { TripDto, TripListDto } from "../shared/apiTypes.js";
 import type { TripStore, TripRecord } from "./store/tripStore.js";
-import { createTripService, ValidationError } from "./tripService.js";
+import { createTripService, NotFoundError, ValidationError } from "./tripService.js";
 
 /** An API call, independent of HTTP: the web adapters translate to and from this. */
 export interface ApiRequest {
@@ -27,7 +27,7 @@ export interface TripApi {
 }
 
 function toDto(trip: TripRecord): TripDto {
-  return { id: trip.id, name: trip.name, updatedAt: trip.updatedAt.toISOString() };
+  return { id: trip.id, name: trip.name, updatedAt: trip.updatedAt.toISOString(), revision: trip.revision };
 }
 
 function bodyField(body: unknown, field: string): unknown {
@@ -57,6 +57,22 @@ export function createTripApi({ store, clock = () => new Date(), newId }: TripAp
       return { status: 405, body: { error: "Method not allowed." } };
     }
 
+    const tripMatch = /^\/api\/trips\/([^/]+)$/.exec(path);
+    if (tripMatch) {
+      const id = decodeURIComponent(tripMatch[1]);
+      if (request.method === "GET") {
+        return { status: 200, body: toDto(await service.getTrip(id)) };
+      }
+      if (request.method === "PATCH") {
+        return { status: 200, body: toDto(await service.renameTrip(id, bodyField(request.body, "name"))) };
+      }
+      if (request.method === "DELETE") {
+        await service.deleteTrip(id);
+        return { status: 204, body: null };
+      }
+      return { status: 405, body: { error: "Method not allowed." } };
+    }
+
     return { status: 404, body: { error: "Not found." } };
   }
 
@@ -66,6 +82,7 @@ export function createTripApi({ store, clock = () => new Date(), newId }: TripAp
         return await route(request);
       } catch (error) {
         if (error instanceof ValidationError) return { status: 400, body: { error: error.message } };
+        if (error instanceof NotFoundError) return { status: 404, body: { error: error.message } };
         throw error;
       }
     },
