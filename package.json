@@ -5,12 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:neon": "vite --mode neon",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "typecheck": "tsc -b",
     "test": "vitest run",
     "test:watch": "vitest",
-    "db:migrate": "tsx scripts/db-migrate.ts"
+    "db:migrate": "node --env-file-if-exists=.env.local --import tsx scripts/db-migrate.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.2.0",

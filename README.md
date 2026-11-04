@@ -11,19 +11,29 @@ npm run dev
 
 Open the URL Vite prints (usually http://localhost:5173). One command serves both the web app and the Trip API (`/api/*`).
 
-With no database configured, the app uses an in-memory Trip store that resets when the dev server restarts. To use Postgres instead, put the connection string in `.env.local`:
+`npm run dev` uses an in-memory Trip store that resets when the dev server restarts, even if `.env.local` exists. To use the Neon database instead, see below.
+
+## Going live / using Neon locally
+
+The live app is the Vercel project `breakingbadtour67` (https://breakingbadtour67.vercel.app), deployed from `main` on GitHub. Its Neon Postgres database was added through Vercel's storage marketplace, which sets `DATABASE_URL` (and related variables) for every environment. The connection string is only read by the server function and never reaches the browser.
+
+To work against Neon locally (the real, shared data, so be careful):
 
 ```sh
-DATABASE_URL=postgres://...
+npx vercel link                    # once, if .vercel/ is missing; pick breakingbadtour67
+npx vercel env pull .env.local     # writes DATABASE_URL etc. to .env.local (gitignored, never commit it)
+npm run dev:neon                   # dev server using Neon instead of the in-memory store
 ```
 
-and create the tables:
+Create or update the tables:
 
 ```sh
-DATABASE_URL=postgres://... npm run db:migrate
+npm run db:migrate
 ```
 
-The migration is idempotent. Re-run it after pulling changes that touch `server/store/schema.ts`.
+`db:migrate` reads `.env.local` if it exists; a `DATABASE_URL` set in the shell takes precedence, so `DATABASE_URL=postgres://... npm run db:migrate` targets any other database. The migration is idempotent. Re-run it after pulling changes that touch `server/store/schema.ts`, before (or right after) those changes deploy.
+
+The local dev server and scripts give each network connection attempt 2 s instead of Node's default 250 ms (`scripts/localNetwork.ts`), because on networks without working IPv6 the connect to Neon otherwise fails with `ETIMEDOUT`. The Vercel function is unaffected.
 
 ## Tests and checks
 
@@ -44,3 +54,4 @@ npm run build
 - `server/http/adapters.ts` — thin HTTP adapters for Vercel and the Vite dev server.
 - `server/testing/` — test helpers that wire the Trip API to in-memory fakes.
 - `api/index.ts` — the Vercel server function; `vercel.json` routes every `/api/*` request to it.
+- `scripts/` — local-only scripts: `db-migrate.ts` and the `localNetwork.ts` connect-timeout tweak.

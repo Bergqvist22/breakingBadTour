@@ -1,9 +1,14 @@
+import "./localNetwork.js";
 import { databaseUrlFrom } from "../server/config.js";
 import { migratePostgres } from "../server/store/postgresTripStore.js";
 
+// `npm run db:migrate` loads `.env.local` (from `npx vercel env pull .env.local`) if it exists;
+// a DATABASE_URL set in the shell takes precedence.
 const url = databaseUrlFrom(process.env);
 if (!url) {
-  console.error("Set DATABASE_URL to the Postgres connection string, e.g. DATABASE_URL=postgres://... npm run db:migrate");
+  console.error(
+    "No database configured. Run `npx vercel env pull .env.local` first, or set DATABASE_URL, e.g. DATABASE_URL=postgres://... npm run db:migrate",
+  );
   process.exit(1);
 }
 
