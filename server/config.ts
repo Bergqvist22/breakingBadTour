@@ -11,6 +11,18 @@ export function databaseUrlFrom(env: Env): string | undefined {
   return env.DATABASE_URL || env.POSTGRES_URL || undefined;
 }
 
+/** The Vite mode (`npm run dev:neon`) in which the dev server reads the database URL from `.env` files. */
+export const NEON_DEV_MODE = "neon";
+
+/**
+ * The environment the dev server's Trip API sees. Variables from `.env` files
+ * (e.g. `.env.local` from `vercel env pull`) only count in the neon mode, so plain
+ * `npm run dev` stays on the in-memory store. Variables set in the shell always count.
+ */
+export function devServerEnv({ mode, fileEnv, processEnv }: { mode: string; fileEnv: Env; processEnv: Env }): Env {
+  return mode === NEON_DEV_MODE ? { ...fileEnv, ...processEnv } : { ...processEnv };
+}
+
 /** Postgres when a database is configured, otherwise an in-memory store. */
 export function createStoreFromEnv(env: Env): TripStore {
   const url = databaseUrlFrom(env);
