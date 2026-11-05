@@ -2,6 +2,7 @@ import { createTripApi, type TripApi } from "./tripApi.js";
 import { createMemoryTripStore } from "./store/memoryTripStore.js";
 import { createPostgresTripStore } from "./store/postgresTripStore.js";
 import type { TripStore } from "./store/tripStore.js";
+import { createNominatimGeocoder } from "./geocoder/nominatimGeocoder.js";
 
 type Env = Record<string, string | undefined>;
 
@@ -18,5 +19,8 @@ export function createStoreFromEnv(env: Env): TripStore {
 
 /** The Trip API wired to real dependencies chosen from the environment. */
 export function createTripApiFromEnv(env: Env = process.env): TripApi {
-  return createTripApi({ store: createStoreFromEnv(env) });
+  return createTripApi({
+    store: createStoreFromEnv(env),
+    geocoder: createNominatimGeocoder({ userAgent: env.NOMINATIM_USER_AGENT || undefined }),
+  });
 }
