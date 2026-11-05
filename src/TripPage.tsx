@@ -1,28 +1,46 @@
-import { useEffect, useState, type FormEvent, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import type { TripDto } from "../shared/apiTypes";
 import { followLink, navigate } from "./router";
+import { StopsSection } from "./StopsSection";
 import { ApiError, tripApiClient } from "./tripApiClient";
+import { usePolling } from "./usePolling";
 
 type Load = { state: "loading" } | { state: "loaded"; trip: TripDto } | { state: "notFound" } | { state: "error"; message: string };
 
-/** One Trip's page: its name, renaming, and deleting (after a "Tread lightly" confirmation). */
+/**
+ * One Trip's page: its name (rename), its Stops, and deleting (after a "Tread lightly"
+ * confirmation). Polls every 3 seconds and only re-renders when the Trip's revision moved.
+ */
 export function TripPage({ tripId }: { tripId: string }) {
   const [load, setLoad] = useState<Load>({ state: "loading" });
+  const shownRevision = useRef<number | null>(null);
+
+  const show = useCallback((trip: TripDto) => {
+    // A slow poll can answer after a newer change; never step back to an older revision.
+    if (shownRevision.current !== null && trip.revision <= shownRevision.current) return;
+    shownRevision.current = trip.revision;
+    setLoad({ state: "loaded", trip });
+  }, []);
+
+  const gone = useCallback(() => setLoad({ state: "notFound" }), []);
+
+  const refresh = useCallback(async () => {
+    try {
+      show(await tripApiClient.getTrip(tripId));
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 404) return gone();
+      // While polling, keep showing what we have and try again next time.
+      setLoad((current) => (current.state === "loaded" ? current : { state: "error", message: (error as Error).message }));
+    }
+  }, [tripId, show, gone]);
 
   useEffect(() => {
-    let current = true;
-    tripApiClient.getTrip(tripId).then(
-      (trip) => current && setLoad({ state: "loaded", trip }),
-      (error) => {
-        if (!current) return;
-        if (error instanceof ApiError && error.status === 404) setLoad({ state: "notFound" });
-        else setLoad({ state: "error", message: (error as Error).message });
-      },
-    );
-    return () => {
-      current = false;
-    };
-  }, [tripId]);
+    void refresh();
+  }, [refresh]);
+
+  usePolling(async () => {
+    if (load.state !== "notFound") await refresh();
+  });
 
   if (load.state === "loading") return <TripShell>Loading…</TripShell>;
   if (load.state === "notFound") return <TripNotFound />;
@@ -34,13 +52,7 @@ export function TripPage({ tripId }: { tripId: string }) {
     );
   }
 
-  return (
-    <TripDetails
-      trip={load.trip}
-      onRenamed={(trip) => setLoad({ state: "loaded", trip })}
-      onGone={() => setLoad({ state: "notFound" })}
-    />
-  );
+  return <TripDetails trip={load.trip} onTripChanged={show} onGone={gone} />;
 }
 
 function TripShell({ children }: { children: ReactNode }) {
@@ -77,11 +89,11 @@ export function TripNotFound() {
 
 function TripDetails({
   trip,
-  onRenamed,
+  onTripChanged,
   onGone,
 }: {
   trip: TripDto;
-  onRenamed: (trip: TripDto) => void;
+  onTripChanged: (trip: TripDto) => void;
   onGone: () => void;
 }) {
   const [renaming, setRenaming] = useState(false);
@@ -105,7 +117,7 @@ function TripDetails({
     }
     setBusy(true);
     try {
-      onRenamed(await tripApiClient.renameTrip(trip.id, newName));
+      onTripChanged(await tripApiClient.renameTrip(trip.id, newName));
       setRenaming(false);
       setRenameError(null);
     } catch (error) {
@@ -159,6 +171,8 @@ function TripDetails({
           </button>
         </div>
       )}
+
+      <StopsSection trip={trip} onTripChanged={onTripChanged} onGone={onGone} />
 
       <section className="danger-zone">
         {confirmingDelete ? (

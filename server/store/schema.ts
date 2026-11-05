@@ -13,4 +13,17 @@ export const schemaStatements: string[] = [
   `CREATE INDEX IF NOT EXISTS trips_updated_at_idx ON trips (updated_at DESC)`,
   // Ticket 03: a revision that goes up on every change, for polling.
   `ALTER TABLE trips ADD COLUMN IF NOT EXISTS revision INTEGER NOT NULL DEFAULT 1`,
+  // Ticket 04: Stops, and the Stop picked as a Trip's Start. No foreign key on
+  // start_stop_id: a removed Start is simply ignored and the oldest Stop takes over.
+  `ALTER TABLE trips ADD COLUMN IF NOT EXISTS start_stop_id TEXT`,
+  `CREATE TABLE IF NOT EXISTS stops (
+    id         TEXT PRIMARY KEY,
+    trip_id    TEXT NOT NULL REFERENCES trips (id) ON DELETE CASCADE,
+    name       TEXT NOT NULL CHECK (length(trim(name)) > 0),
+    lat        DOUBLE PRECISION NOT NULL CHECK (lat BETWEEN -90 AND 90),
+    lng        DOUBLE PRECISION NOT NULL CHECK (lng BETWEEN -180 AND 180),
+    address    TEXT,
+    created_at TIMESTAMPTZ NOT NULL
+  )`,
+  `CREATE INDEX IF NOT EXISTS stops_trip_id_created_at_idx ON stops (trip_id, created_at)`,
 ];

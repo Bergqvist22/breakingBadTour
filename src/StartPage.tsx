@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
-import type { TripDto } from "../shared/apiTypes";
+import type { TripSummaryDto } from "../shared/apiTypes";
 import { followLink, navigate, tripUrl } from "./router";
 import { tripApiClient } from "./tripApiClient";
 import { usePolling } from "./usePolling";
@@ -7,14 +7,14 @@ import { usePolling } from "./usePolling";
 const lastChangedFormat = new Intl.DateTimeFormat("en", { dateStyle: "medium", timeStyle: "short" });
 
 /** Changes whenever a Trip is added, removed, reordered or changed (its revision moves). */
-const listSignature = (trips: TripDto[]) => trips.map((trip) => `${trip.id}@${trip.revision}`).join(",");
+const listSignature = (trips: TripSummaryDto[]) => trips.map((trip) => `${trip.id}@${trip.revision}`).join(",");
 
 /**
  * The start page: every Trip, most recently changed first, and a form to cook up a new one.
  * Polls every 3 seconds and only re-renders when the list actually changed.
  */
 export function StartPage() {
-  const [trips, setTrips] = useState<TripDto[] | null>(null);
+  const [trips, setTrips] = useState<TripSummaryDto[] | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [createError, setCreateError] = useState<string | null>(null);

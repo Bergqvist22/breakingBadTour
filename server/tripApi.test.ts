@@ -183,7 +183,9 @@ describe("Trip API: managing a Trip", () => {
 
     expect(deleted.status).toBe(204);
     expect((await api.get(`/api/trips/${doomed.body.id}`)).status).toBe(404);
-    expect((await api.get("/api/trips")).body).toEqual({ trips: [kept.body] });
+    expect((await api.get("/api/trips")).body).toEqual({
+      trips: [{ id: kept.body.id, name: "Kept", updatedAt: kept.body.updatedAt, revision: kept.body.revision }],
+    });
   });
 
   it("answers 404 when deleting a Trip that doesn't exist", async () => {

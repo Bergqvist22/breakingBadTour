@@ -1,5 +1,7 @@
 import { createTripApi, type ApiResponse } from "../tripApi.js";
 import { createMemoryTripStore } from "../store/memoryTripStore.js";
+import type { Geocoder } from "../geocoder/geocoder.js";
+import { createFakeGeocoder } from "./fakeGeocoder.js";
 
 /**
  * A fake clock that starts at a fixed instant and moves forward one minute
@@ -19,6 +21,8 @@ type TestResponse = { status: number; body: any };
 
 export interface TestApiOptions {
   clock?: () => Date;
+  /** Defaults to a fake geocoder that finds nothing and knows no street addresses. */
+  geocoder?: Geocoder;
 }
 
 /**
@@ -29,6 +33,7 @@ export function createTestApi(options: TestApiOptions = {}) {
   const api = createTripApi({
     store: createMemoryTripStore(),
     clock: options.clock ?? createTickingClock(),
+    geocoder: options.geocoder ?? createFakeGeocoder(),
   });
 
   const send = async (method: string, path: string, body?: unknown): Promise<TestResponse> => {

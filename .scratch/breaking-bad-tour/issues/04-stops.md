@@ -4,15 +4,15 @@
 
 **Blocked by:** 03 — Manage Trips
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] Searching an address shows up to 5 matches to pick from, or a clear "nothing found" message
-- [ ] Typed coordinates are recognised and used as typed, with the street address looked up when one exists and left empty otherwise (never a county or area name)
-- [ ] A Stop can't be added without a name
-- [ ] Each Stop shows its name, address when present, and coordinates, with copy buttons
-- [ ] A Stop can be renamed (empty rejected) and moved by searching a new address or typing new coordinates
-- [ ] A Stop can be removed with one click
-- [ ] The first Stop added becomes the Start; any Stop can be made the Start; removing the Start hands it to the oldest remaining Stop
-- [ ] Address lookups go through the server with an identifying User-Agent, search on submit only (no autocomplete), and show a clear message when the lookup service fails
-- [ ] The Trip page polls every 3 seconds and only re-renders when something changed
-- [ ] Trip API tests with a fake geocoder cover adding by address and by coordinates, no street address, the required name, rename, change location, remove, and all Start rules
+- [x] Searching an address shows up to 5 matches to pick from, or a clear "nothing found" message
+- [x] Typed coordinates are recognised and used as typed, with the street address looked up when one exists and left empty otherwise (never a county or area name)
+- [x] A Stop can't be added without a name
+- [x] Each Stop shows its name, address when present, and coordinates, with copy buttons
+- [x] A Stop can be renamed (empty rejected) and moved by searching a new address or typing new coordinates
+- [x] A Stop can be removed with one click
+- [x] The first Stop added becomes the Start; any Stop can be made the Start; removing the Start hands it to the oldest remaining Stop
+- [x] Address lookups go through the server with an identifying User-Agent, search on submit only (no autocomplete), and show a clear message when the lookup service fails
+- [x] The Trip page polls every 3 seconds and only re-renders when something changed
+- [x] Trip API tests with a fake geocoder cover adding by address and by coordinates, no street address, the required name, rename, change location, remove, and all Start rules
