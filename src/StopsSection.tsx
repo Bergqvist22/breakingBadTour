@@ -63,7 +63,7 @@ function AddStop({ tripId, ...actions }: { tripId: string } & TripActions) {
     event.preventDefault();
     if (!picked) return;
     if (!name.trim()) {
-      setError("Say my name: every Stop needs a name.");
+      setError("Every Stop needs a name.");
       return;
     }
     setBusy(true);
@@ -89,7 +89,7 @@ function AddStop({ tripId, ...actions }: { tripId: string } & TripActions) {
               Pick another
             </button>
           </p>
-          <label htmlFor={nameId}>Say my name</label>
+          <label htmlFor={nameId}>Name of stop</label>
           <div className="input-row">
             <input
               id={nameId}
@@ -143,7 +143,7 @@ function StopItem({
   async function onRename(event: FormEvent) {
     event.preventDefault();
     if (!newName.trim()) {
-      setError("Say my name: a Stop needs a name.");
+      setError("A Stop needs a name.");
       return;
     }
     await change(() => tripApiClient.renameStop(tripId, stop.id, newName));
@@ -168,7 +168,7 @@ function StopItem({
 
       {editing === "rename" && (
         <form className="stop-edit" onSubmit={onRename}>
-          <label htmlFor={nameId}>Say my name</label>
+          <label htmlFor={nameId}>Name of stop</label>
           <div className="input-row">
             <input id={nameId} value={newName} onChange={(event) => setNewName(event.target.value)} autoComplete="off" autoFocus />
             <button type="submit" disabled={busy}>

@@ -91,7 +91,7 @@ A small, shared, Breaking Bad–themed web app. The start page lists all Trips. 
 
 52. As a group member, I want the whole app in a New Mexico palette (chemistry green, hazmat yellow, desert sand, crystal blue), so that it feels like Breaking Bad.
 53. As a group member, I want a dark map with a crystal-blue Route line, so that the Route stands out.
-54. As a group member, I want show-flavoured wording such as "Cook up a new Trip", "Say my name" on the Stop name field and "Tread lightly" on delete, so that the app is fun to use.
+54. As a group member, I want show-flavoured wording such as "Cook up a new Trip" and "Tread lightly" on delete (the Stop name field is labelled plainly "Name of stop"), so that the app is fun to use.
 55. As a group member, I want the app's own title styled as periodic-table element tiles, so that every page carries the theme without needing pictures.
 
 ### The ready-made Breaking Bad Tour
