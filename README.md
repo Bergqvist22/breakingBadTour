@@ -52,7 +52,7 @@ npm run build
 
 ## Layout
 
-- `src/` — the React web app. It only ever talks to `/api`. Pages: `/` (start page) and `/trips/:id` (a Trip with its map, Route and Stops), routed by the small `src/router.ts`; `src/usePolling.ts` polls every 3 seconds and both pages only re-render when a revision moved (the Trip page polls `/api/trips/:id/revision` and only fetches the whole Trip, with its Route line, when it moved). `src/RouteMap.tsx` is the Leaflet map, `src/format.ts` the "87 km (54 mi)" and "1 h 32 min" formats.
+- `src/` — the React web app. It only ever talks to `/api`. Pages: `/` (start page) and `/trips/:id` (a Trip with its map, Route and Stops), routed by the small `src/router.ts`; `src/usePolling.ts` polls every 3 seconds and both pages only re-render when a revision moved (the Trip page polls `/api/trips/:id/revision` and only fetches the whole Trip, with its Route line, when it moved). `src/RouteMap.tsx` is the Leaflet map, `src/format.ts` the "87 km (54 mi)" and "1 h 32 min" formats. The Breaking Bad theme lives in `src/styles.css` (palette as CSS variables on `:root`; phone layout first, map and list side by side from 60rem) and `src/AppTitle.tsx` (the element-tile title, built in code). Fonts come from Google Fonts (linked in `index.html`), and the favicon is an inline SVG there.
 - `shared/` — JSON types shared by the web app and the Trip API.
 - `server/tripApi.ts` — the Trip API: a plain `handle({ method, path, body })` function, the single test seam.
 - `server/tripService.ts` — the rules (validation, ordering, timestamps, the Start, recognising typed coordinates, and recalculating and saving the Route after changes that affect it).

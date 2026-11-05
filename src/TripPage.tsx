@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import type { TripDto } from "../shared/apiTypes";
+import { AppTitleLink } from "./AppTitle";
 import { followLink, navigate } from "./router";
 import { RouteMap } from "./RouteMap";
 import { shownRoute, StopsSection } from "./StopsSection";
@@ -55,7 +56,12 @@ export function TripPage({ tripId }: { tripId: string }) {
     await refresh();
   });
 
-  if (load.state === "loading") return <TripShell>Loading…</TripShell>;
+  if (load.state === "loading")
+    return (
+      <TripShell>
+        <p className="loading">Loading the Trip…</p>
+      </TripShell>
+    );
   if (load.state === "notFound") return <TripNotFound />;
   if (load.state === "error") {
     return (
@@ -70,8 +76,11 @@ export function TripPage({ tripId }: { tripId: string }) {
 
 function TripShell({ children }: { children: ReactNode }) {
   return (
-    <main className="page">
-      <BackLink />
+    <main className="page trip-page">
+      <header className="site-header">
+        <AppTitleLink />
+        <BackLink />
+      </header>
       {children}
     </main>
   );
@@ -89,8 +98,11 @@ function BackLink() {
 export function TripNotFound() {
   return (
     <main className="page not-found">
+      <header className="site-header">
+        <AppTitleLink />
+      </header>
       <h1>No Trip here</h1>
-      <p>This Trip doesn't exist. Someone may have deleted it, or the link is wrong.</p>
+      <p>This Trip has gone off the grid. Someone may have deleted it, or the link is wrong.</p>
       <p>
         <a href="/" onClick={followLink}>
           Back to all Trips
@@ -185,32 +197,38 @@ function TripDetails({
         </div>
       )}
 
-      <RouteMap stops={trip.stops} startStopId={trip.startStopId} route={shownRoute(trip)} />
+      <div className="trip-layout">
+        <div className="trip-map">
+          <RouteMap stops={trip.stops} startStopId={trip.startStopId} route={shownRoute(trip)} />
+        </div>
 
-      <StopsSection trip={trip} onTripChanged={onTripChanged} onGone={onGone} />
+        <div className="trip-side">
+          <StopsSection trip={trip} onTripChanged={onTripChanged} onGone={onGone} />
 
-      <section className="danger-zone">
-        {confirmingDelete ? (
-          <div className="confirm-delete" role="alertdialog" aria-labelledby="tread-lightly">
-            <p id="tread-lightly">
-              <strong>Tread lightly.</strong> Delete “{trip.name}” and all its Stops for good? There's no undo.
-            </p>
-            <div className="input-row">
-              <button type="button" className="danger" onClick={onDelete} disabled={busy}>
-                Delete it
+          <section className="danger-zone">
+            {confirmingDelete ? (
+              <div className="confirm-delete" role="alertdialog" aria-labelledby="tread-lightly">
+                <p id="tread-lightly">
+                  <strong>Tread lightly.</strong> Delete “{trip.name}” and all its Stops for good? There's no undo.
+                </p>
+                <div className="input-row">
+                  <button type="button" className="danger" onClick={onDelete} disabled={busy}>
+                    Yes, delete it
+                  </button>
+                  <button type="button" className="secondary" onClick={() => setConfirmingDelete(false)} disabled={busy} autoFocus>
+                    Cancel
+                  </button>
+                </div>
+                {deleteError && <p className="error">{deleteError}</p>}
+              </div>
+            ) : (
+              <button type="button" className="danger" onClick={() => setConfirmingDelete(true)}>
+                Delete Trip
               </button>
-              <button type="button" className="secondary" onClick={() => setConfirmingDelete(false)} disabled={busy} autoFocus>
-                Cancel
-              </button>
-            </div>
-            {deleteError && <p className="error">{deleteError}</p>}
-          </div>
-        ) : (
-          <button type="button" className="danger" onClick={() => setConfirmingDelete(true)}>
-            Delete Trip
-          </button>
-        )}
-      </section>
+            )}
+          </section>
+        </div>
+      </div>
     </TripShell>
   );
 }

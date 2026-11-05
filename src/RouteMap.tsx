@@ -13,6 +13,9 @@ const ALBUQUERQUE: [number, number] = [35.0844, -106.6504];
  * CARTO's dark tiles now need an API key and only show "API KEY REQUIRED" without one.
  */
 const TILES = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
+/** The Route line's colour: crystal blue (matches --crystal in styles.css). */
+const CRYSTAL_BLUE = "#5fd4ff";
+
 const ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
 
 /** Numbered marker icons, made once per number (a new icon on every render would rebuild the marker). */
@@ -24,9 +27,9 @@ function numberedIcon(n: number, isStart: boolean): L.DivIcon {
     icon = L.divIcon({
       className: "stop-marker",
       html: `<span class="stop-marker-tile${isStart ? " is-start" : ""}">${n}</span>`,
-      iconSize: [32, 32],
-      iconAnchor: [16, 16],
-      tooltipAnchor: [0, -16],
+      iconSize: [34, 34],
+      iconAnchor: [17, 17],
+      tooltipAnchor: [0, -17],
     });
     icons.set(key, icon);
   }
@@ -41,13 +44,20 @@ export function RouteMap({ stops, startStopId, route }: { stops: StopDto[]; star
   return (
     <MapContainer className="route-map" center={ALBUQUERQUE} zoom={11} scrollWheelZoom>
       <TileLayer url={TILES} maxZoom={19} attribution={ATTRIBUTION} />
-      {route && <Polyline positions={route.line} pathOptions={{ color: "#5ad1ff", weight: 5, opacity: 0.9 }} />}
+      {route && (
+        <>
+          {/* A soft glow under the line, so the crystal blue reads on the dark map. */}
+          <Polyline positions={route.line} pathOptions={{ color: CRYSTAL_BLUE, weight: 14, opacity: 0.22, interactive: false }} />
+          <Polyline positions={route.line} pathOptions={{ color: CRYSTAL_BLUE, weight: 5, opacity: 0.95, interactive: false }} />
+        </>
+      )}
       {stops.map((stop, i) => (
         <Marker key={stop.id} position={[stop.lat, stop.lng]} icon={numberedIcon(i + 1, stop.id === startStopId)}>
           <Tooltip direction="top">{stop.name}</Tooltip>
         </Marker>
       ))}
       <FitToStops stops={stops} />
+      <FollowContainerSize />
     </MapContainer>
   );
 }
@@ -71,6 +81,19 @@ function FitToStops({ stops }: { stops: StopDto[] }) {
     else map.fitBounds(L.latLngBounds(positions), { padding: [32, 32], maxZoom: 15 });
     // Keyed on the set of positions only; `positions` itself is a new array every render.
   }, [map, key]);
+
+  return null;
+}
+
+/** Redraws the map when its box changes size (e.g. the phone/desktop layout switch), so no tiles go missing. */
+function FollowContainerSize() {
+  const map = useMap();
+
+  useEffect(() => {
+    const observer = new ResizeObserver(() => map.invalidateSize());
+    observer.observe(map.getContainer());
+    return () => observer.disconnect();
+  }, [map]);
 
   return null;
 }
