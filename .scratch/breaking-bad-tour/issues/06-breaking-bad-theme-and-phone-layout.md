@@ -4,14 +4,14 @@
 
 **Blocked by:** 05 — Route
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] The palette is applied consistently across the start page and the Trip page
-- [ ] The app title is built from element-style tiles in code, with no image
-- [ ] The map uses a dark tile style with correct attribution, and the Route line is crystal blue
-- [ ] Stop markers are numbered element tiles matching the Stop list
-- [ ] Show-flavoured wording is used for the main actions, empty states and the delete confirmation, and stays clear about what each action does
-- [ ] Phone widths (around 375px): map on top, list underneath, no sideways scrolling, controls easy to tap
-- [ ] Desktop widths: map and list side by side
-- [ ] Text and controls keep readable contrast
-- [ ] Checked by running the app at phone and desktop widths
+- [x] The palette is applied consistently across the start page and the Trip page
+- [x] The app title is built from element-style tiles in code, with no image
+- [x] The map uses a dark tile style with correct attribution, and the Route line is crystal blue
+- [x] Stop markers are numbered element tiles matching the Stop list
+- [x] Show-flavoured wording is used for the main actions, empty states and the delete confirmation, and stays clear about what each action does
+- [x] Phone widths (around 375px): map on top, list underneath, no sideways scrolling, controls easy to tap
+- [x] Desktop widths: map and list side by side
+- [x] Text and controls keep readable contrast
+- [x] Checked by running the app at phone and desktop widths
