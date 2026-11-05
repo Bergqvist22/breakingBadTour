@@ -264,3 +264,99 @@ button.match:focus-visible {
 .notice {
   color: #e8d48b;
 }
+
+/* Route (ticket 05). Functional only; the Breaking Bad theme comes later. */
+.trip-facts {
+  font-size: 0.9rem;
+}
+
+.route-map {
+  height: 22rem;
+  margin-top: 1rem;
+  border-radius: 0.5rem;
+  background: #1a1a1a;
+}
+
+/* A dark map from the light OpenStreetMap tiles; the Route line and markers keep their colours. */
+.route-map .leaflet-tile-pane {
+  filter: invert(1) hue-rotate(180deg) brightness(0.9) contrast(0.9);
+}
+
+.route-map .leaflet-control-attribution {
+  background: rgba(17, 17, 17, 0.8);
+  color: #bbb;
+}
+
+.route-map .leaflet-control-attribution a {
+  color: #8fd3ff;
+}
+
+.stop-marker {
+  background: transparent;
+  border: none;
+}
+
+.stop-marker-tile,
+.stop-number {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  flex: none;
+  border-radius: 0.3rem;
+  background: #1f5f33;
+  border: 2px solid #9fe870;
+  color: #fff;
+  font: 700 0.95rem/1 system-ui, sans-serif;
+  box-sizing: border-box;
+}
+
+.stop-marker-tile {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+}
+
+.stop-marker-tile.is-start,
+.is-start .stop-number {
+  background: #8a6d00;
+  border-color: #ffd23f;
+}
+
+.route-summary {
+  margin-bottom: 1rem;
+}
+
+.totals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.75rem;
+  font-size: 1.1rem;
+}
+
+.round-trip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+  cursor: pointer;
+}
+
+.round-trip input {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.placement {
+  font-size: 0.85rem;
+  font-style: italic;
+  color: #e8d48b;
+}
+
+.stop.is-adding {
+  opacity: 0.7;
+}
+
+.leg {
+  margin: 0.6rem 0 0;
+  font-size: 0.9rem;
+  color: #8fd3ff;
+}

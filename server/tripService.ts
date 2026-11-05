@@ -1,6 +1,16 @@
 import { randomUUID } from "node:crypto";
-import type { StopLocation, StopRecord, TripRecord, TripStore } from "./store/tripStore.js";
+import type {
+  SavedRoute,
+  StopLocation,
+  StopRecord,
+  TripChanges,
+  TripRecord,
+  TripStore,
+  TripSummaryRecord,
+} from "./store/tripStore.js";
 import type { Geocoder } from "./geocoder/geocoder.js";
+import { RoutingError, type RoutingProvider } from "./routing/routingProvider.js";
+import { calculateRoute, routeBasis } from "./routing/calculateRoute.js";
 
 /** A rule was broken by the caller's input (maps to HTTP 400). */
 export class ValidationError extends Error {}
@@ -18,8 +28,9 @@ export interface LocationMatch {
   lng: number;
 }
 
-/** A Trip with its Stops (oldest first) and its Start. */
+/** A Trip with its Stops (in Route order) and its Start. */
 export interface TripView extends TripRecord {
+  /** In Route order; Stops the saved Route doesn't include yet come last, oldest first. */
   stops: StopRecord[];
   /** The Start: the picked Stop if it is still there, otherwise the oldest Stop; null without Stops. */
   startStopId: string | null;
@@ -28,6 +39,7 @@ export interface TripView extends TripRecord {
 export interface TripServiceDeps {
   store: TripStore;
   geocoder: Geocoder;
+  routing: RoutingProvider;
   clock: () => Date;
   newId?: () => string;
 }
@@ -35,11 +47,16 @@ export interface TripServiceDeps {
 export interface TripService {
   createTrip(name: unknown): Promise<TripView>;
   /** All Trips, most recently changed first. */
-  listTrips(): Promise<TripRecord[]>;
+  listTrips(): Promise<TripSummaryRecord[]>;
   /** The Trip with this id; throws NotFoundError if there is none. */
   getTrip(id: string): Promise<TripView>;
-  /** Gives the Trip a new (non-empty) name; throws NotFoundError if there is no such Trip. */
-  renameTrip(id: string, name: unknown): Promise<TripView>;
+  /** Just the Trip's revision, for cheap polling; throws NotFoundError if there is no such Trip. */
+  getRevision(id: string): Promise<number>;
+  /**
+   * Gives the Trip a new (non-empty) name and/or turns Round trip on or off (whichever is given);
+   * throws NotFoundError if there is no such Trip.
+   */
+  changeTrip(id: string, changes: { name?: unknown; roundTrip?: unknown }): Promise<TripView>;
   /** Deletes the Trip and its Stops; throws NotFoundError if there is no such Trip. */
   deleteTrip(id: string): Promise<void>;
   /** Up to 5 places matching an address, or the typed coordinates with their street address. */
@@ -75,6 +92,9 @@ function parseCoordinates(text: string): { lat: number; lng: number } | undefine
 /** How many matches a location search offers to pick from. */
 const MAX_MATCHES = 5;
 
+/** How many times saving a change starts over because the Trip changed meanwhile (see `save`). */
+const MAX_SAVE_ATTEMPTS = 5;
+
 function requiredName(name: unknown, message: string): string {
   const trimmed = typeof name === "string" ? name.trim() : "";
   if (!trimmed) throw new ValidationError(message);
@@ -107,10 +127,18 @@ function startOf(trip: TripRecord, stops: StopRecord[]): string | null {
   return (picked ?? stops[0])?.id ?? null;
 }
 
-export function createTripService({ store, geocoder, clock, newId = randomUUID }: TripServiceDeps): TripService {
+/** The Stops in the saved Route's order; any it doesn't include come last, oldest first. */
+function inRouteOrder(stops: StopRecord[], route: SavedRoute | null): StopRecord[] {
+  if (!route) return stops;
+  const position = new Map(route.stopIds.map((id, i) => [id, i]));
+  const last = route.stopIds.length;
+  return [...stops].sort((a, b) => (position.get(a.id) ?? last) - (position.get(b.id) ?? last));
+}
+
+export function createTripService({ store, geocoder, routing, clock, newId = randomUUID }: TripServiceDeps): TripService {
   async function view(trip: TripRecord): Promise<TripView> {
     const stops = await store.listStops(trip.id);
-    return { ...trip, stops, startStopId: startOf(trip, stops) };
+    return { ...trip, stops: inRouteOrder(stops, trip.route), startStopId: startOf(trip, stops) };
   }
 
   async function existingTrip(id: string): Promise<TripRecord> {
@@ -119,18 +147,65 @@ export function createTripService({ store, geocoder, clock, newId = randomUUID }
     return trip;
   }
 
-  /** Records that the Trip changed (its revision moves) and returns the updated Trip. */
-  async function touch(tripId: string, changes: Omit<Parameters<TripStore["updateTrip"]>[1], "updatedAt"> = {}) {
-    const trip = await store.updateTrip(tripId, { ...changes, updatedAt: clock() });
-    if (!trip) throw tripNotFound();
-    return view(trip);
+  /**
+   * The Route changes that bring a Trip with these Stops up to date; none if its Route
+   * already fits them. If the routing service fails or refuses, the last good Route
+   * stays and the error is recorded instead, to be cleared by the next successful one.
+   */
+  async function routeUpdate(trip: TripRecord, stops: StopRecord[]): Promise<Pick<TripChanges, "route" | "routeError">> {
+    if (stops.length < 2) return trip.route || trip.routeError ? { route: null, routeError: null } : {};
+    const inputs = { stops, startStopId: startOf(trip, stops)!, roundTrip: trip.roundTrip };
+    if (trip.route?.basis === routeBasis(inputs)) return trip.routeError ? { routeError: null } : {};
+    try {
+      return { route: await calculateRoute(routing, inputs), routeError: null };
+    } catch (error) {
+      if (!(error instanceof RoutingError)) throw error;
+      console.error(`Couldn't update the Route of Trip ${trip.id}:`, error.message);
+      return { routeError: error.message };
+    }
+  }
+
+  /**
+   * Saves a change to the Trip (its revision moves), recalculating the Route first if the
+   * Stops, their locations, the Start or Round trip no longer match it. The Route is worked
+   * out from the Stops as they are now, so earlier changes are included.
+   *
+   * If someone else saved the Trip while this Route was being worked out, their change
+   * may be missing from it, so it is only saved if the revision is still the one it
+   * started from; otherwise it starts over (the last attempt saves regardless). This
+   * way overlapping changes always end with a Route that includes every Stop.
+   */
+  async function save(tripId: string, changes: Omit<TripChanges, "updatedAt" | "route" | "routeError"> = {}): Promise<TripView> {
+    for (let attempt = 1; ; attempt++) {
+      const current = await existingTrip(tripId);
+      const stops = await store.listStops(tripId);
+      const route = await routeUpdate({ ...current, ...changes }, stops);
+      const lastAttempt = attempt === MAX_SAVE_ATTEMPTS;
+      const updated = await store.updateTrip(
+        tripId,
+        { ...changes, ...route, updatedAt: clock() },
+        lastAttempt ? undefined : current.revision,
+      );
+      if (updated) return view(updated);
+      if (lastAttempt) throw tripNotFound();
+    }
   }
 
   return {
     async createTrip(name) {
       const validName = tripName(name);
       const now = clock();
-      const trip: TripRecord = { id: newId(), name: validName, createdAt: now, updatedAt: now, revision: 1, startStopId: null };
+      const trip: TripRecord = {
+        id: newId(),
+        name: validName,
+        createdAt: now,
+        updatedAt: now,
+        revision: 1,
+        startStopId: null,
+        roundTrip: false,
+        route: null,
+        routeError: null,
+      };
       await store.insertTrip(trip);
       return view(trip);
     },
@@ -144,8 +219,20 @@ export function createTripService({ store, geocoder, clock, newId = randomUUID }
       return view(await existingTrip(id));
     },
 
-    async renameTrip(id, name) {
-      return touch(id, { name: tripName(name) });
+    async getRevision(id) {
+      const revision = await store.getRevision(id);
+      if (revision === undefined) throw tripNotFound();
+      return revision;
+    },
+
+    async changeTrip(id, { name, roundTrip }) {
+      if (name === undefined && roundTrip === undefined) {
+        throw new ValidationError("Give the Trip a new name, or turn Round trip on or off.");
+      }
+      if (roundTrip !== undefined && typeof roundTrip !== "boolean") {
+        throw new ValidationError("Round trip is either on (true) or off (false).");
+      }
+      return save(id, { ...(name !== undefined && { name: tripName(name) }), ...(roundTrip !== undefined && { roundTrip }) });
     },
 
     async deleteTrip(id) {
@@ -174,7 +261,7 @@ export function createTripService({ store, geocoder, clock, newId = randomUUID }
       };
       await existingTrip(tripId);
       await store.insertStop(stop);
-      return touch(tripId);
+      return save(tripId);
     },
   
     async changeStop(tripId, stopId, { name, location }) {
@@ -189,14 +276,14 @@ export function createTripService({ store, geocoder, clock, newId = randomUUID }
         await existingTrip(tripId);
         throw stopNotFound();
       }
-      return touch(tripId);
+      return save(tripId);
     },
   
     async removeStop(tripId, stopId) {
       const trip = await existingTrip(tripId);
       if (!(await store.deleteStop(tripId, stopId))) throw stopNotFound();
       // Forgetting a removed Start lets the oldest remaining Stop take over (see startOf).
-      return touch(tripId, trip.startStopId === stopId ? { startStopId: null } : {});
+      return save(tripId, trip.startStopId === stopId ? { startStopId: null } : {});
     },
 
     async makeStart(tripId, stopId) {
@@ -204,7 +291,7 @@ export function createTripService({ store, geocoder, clock, newId = randomUUID }
       await existingTrip(tripId);
       const stops = await store.listStops(tripId);
       if (!stops.some((stop) => stop.id === stopId)) throw stopNotFound();
-      return touch(tripId, { startStopId: stopId });
+      return save(tripId, { startStopId: stopId });
     },
   };
 }

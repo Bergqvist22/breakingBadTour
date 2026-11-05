@@ -1,4 +1,4 @@
-import type { ErrorDto, LocationDto, LocationSearchDto, TripDto, TripListDto } from "../shared/apiTypes";
+import type { ErrorDto, LocationDto, LocationSearchDto, TripDto, TripListDto, TripRevisionDto } from "../shared/apiTypes";
 
 /** Browser-side client for the Trip API. The browser only ever talks to `/api`, never the database. */
 
@@ -38,7 +38,10 @@ export const tripApiClient = {
   listTrips: () => request<TripListDto>("GET", "/api/trips"),
   createTrip: (name: string) => request<TripDto>("POST", "/api/trips", { name }),
   getTrip: (id: string) => request<TripDto>("GET", tripPath(id)),
+  /** Just the Trip's revision: cheap to poll, so the whole Trip (with its Route line) is only fetched when it moved. */
+  getTripRevision: (id: string) => request<TripRevisionDto>("GET", `${tripPath(id)}/revision`),
   renameTrip: (id: string, name: string) => request<TripDto>("PATCH", tripPath(id), { name }),
+  setRoundTrip: (id: string, roundTrip: boolean) => request<TripDto>("PATCH", tripPath(id), { roundTrip }),
   deleteTrip: (id: string) => request<void>("DELETE", tripPath(id)),
   /** Address or "lat, lng" search. Only call on submit: Nominatim forbids search-as-you-type. */
   searchLocations: (query: string) => request<LocationSearchDto>("POST", "/api/locations/search", { query }),

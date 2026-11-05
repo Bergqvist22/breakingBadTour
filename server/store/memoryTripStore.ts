@@ -16,15 +16,25 @@ export function createMemoryTripStore(): TripStore {
       trips.set(trip.id, { ...trip });
     },
     async listTrips() {
-      return [...trips.values()].map((trip) => ({ ...trip }));
+      return [...trips.values()].map(({ id, name, updatedAt, revision, route }) => ({
+        id,
+        name,
+        updatedAt,
+        revision,
+        stopCount: [...stops.values()].filter((stop) => stop.tripId === id).length,
+        routeTotals: route && { distanceMeters: route.distanceMeters, durationSeconds: route.durationSeconds },
+      }));
     },
     async getTrip(id) {
       const trip = trips.get(id);
       return trip && { ...trip };
     },
-    async updateTrip(id, changes) {
+    async getRevision(id) {
+      return trips.get(id)?.revision;
+    },
+    async updateTrip(id, changes, ifRevision) {
       const trip = trips.get(id);
-      if (!trip) return undefined;
+      if (!trip || (ifRevision !== undefined && trip.revision !== ifRevision)) return undefined;
       const updated: TripRecord = { ...trip, ...changes, revision: trip.revision + 1 };
       trips.set(id, updated);
       return { ...updated };

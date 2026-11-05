@@ -1,5 +1,6 @@
 import { useEffect, useId, useState, type FormEvent } from "react";
-import type { LocationDto, StopDto, TripDto } from "../shared/apiTypes";
+import type { LegDto, LocationDto, StopDto, TripDto } from "../shared/apiTypes";
+import { formatDrive } from "./format";
 import { formatCoordinates, LocationSearch } from "./LocationSearch";
 import { ApiError, tripApiClient } from "./tripApiClient";
 
@@ -31,26 +32,113 @@ async function runChange(
   }
 }
 
-/** The Trip's Stops in the order they were added, and a form to add another. */
+/** The Route to show: none with fewer than two Stops. */
+export const shownRoute = (trip: TripDto) => (trip.stops.length >= 2 ? trip.route : null);
+
+/**
+ * The Trip's Stops in Route order (numbered like the map's markers), each with the Leg
+ * to the next one, the Route's totals and the Round trip switch, and a form to add a Stop.
+ */
 export function StopsSection({ trip, ...actions }: { trip: TripDto } & TripActions) {
+  // The name of a Stop being added: listed last, "finding its place…", until the updated Route arrives.
+  const [adding, setAdding] = useState<string | null>(null);
+  const route = shownRoute(trip);
+  const onRoute = new Set(route?.stopIds);
+  const legs = new Map(route?.legs.map((leg) => [`${leg.fromStopId}>${leg.toStopId}`, leg]));
+  const legBetween = (from: StopDto, to: string | undefined) => (to ? legs.get(`${from.id}>${to}`) : undefined);
+
   return (
     <section className="stops">
       <h2>Stops</h2>
-      {trip.stops.length === 0 ? (
+      <RouteSummary trip={trip} {...actions} />
+      {trip.stops.length === 0 && !adding ? (
         <p>No Stops yet. Add the first one below; it becomes the Start.</p>
       ) : (
         <ol className="stop-list">
-          {trip.stops.map((stop) => (
-            <StopItem key={stop.id} tripId={trip.id} stop={stop} isStart={stop.id === trip.startStopId} {...actions} />
-          ))}
+          {trip.stops.map((stop, i) => {
+            const last = i === trip.stops.length - 1;
+            // A Round trip's last Leg goes back to the Start.
+            const legToNext = last
+              ? trip.roundTrip
+                ? legBetween(stop, route?.stopIds[0])
+                : undefined
+              : legBetween(stop, trip.stops[i + 1].id);
+            // Not on the saved Route: still being placed by someone's change, or routing failed.
+            const notPlaced = trip.stops.length >= 2 && stop.id !== trip.startStopId && !onRoute.has(stop.id);
+            return (
+              <StopItem
+                key={stop.id}
+                tripId={trip.id}
+                stop={stop}
+                number={i + 1}
+                isStart={stop.id === trip.startStopId}
+                placement={notPlaced ? (trip.routeError ? "not on the Route yet" : "finding its place…") : null}
+                legToNext={legToNext}
+                backToStart={last}
+                {...actions}
+              />
+            );
+          })}
+          {adding && (
+            <li className="stop is-adding">
+              <div className="stop-heading">
+                <span className="stop-number" aria-hidden="true">
+                  {trip.stops.length + 1}
+                </span>
+                <span className="stop-name">{adding}</span>
+                <span className="placement">finding its place…</span>
+              </div>
+            </li>
+          )}
         </ol>
       )}
-      <AddStop tripId={trip.id} {...actions} />
+      <AddStop tripId={trip.id} onAdding={setAdding} {...actions} />
     </section>
   );
 }
 
-function AddStop({ tripId, ...actions }: { tripId: string } & TripActions) {
+/** The optimised Route's totals, the Round trip switch, and why the Route couldn't be updated, if it couldn't. */
+function RouteSummary({ trip, ...actions }: { trip: TripDto } & TripActions) {
+  // The Round trip setting asked for, shown straight away while the new Route is worked out.
+  const [switching, setSwitching] = useState<boolean | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const route = shownRoute(trip);
+
+  async function onToggle(roundTrip: boolean) {
+    setSwitching(roundTrip);
+    setError(await runChange(trip.id, () => tripApiClient.setRoundTrip(trip.id, roundTrip), actions));
+    setSwitching(null);
+  }
+
+  return (
+    <div className="route-summary">
+      {route && (
+        <p className="totals">
+          <span>Optimised Route</span> <strong>{formatDrive(route)}</strong>
+        </p>
+      )}
+      <label className="round-trip">
+        <input
+          type="checkbox"
+          checked={switching ?? trip.roundTrip}
+          disabled={switching !== null}
+          onChange={(event) => void onToggle(event.target.checked)}
+        />
+        Round trip: end back at the Start
+      </label>
+      {switching !== null && <span className="placement"> working out the Route…</span>}
+      {trip.routeError && (
+        <p className="error" role="status">
+          Couldn't update the optimised Route: {trip.routeError}{" "}
+          {route ? "Showing the last good Route until the next change works out." : "It will be worked out on the next change."}
+        </p>
+      )}
+      {error && <p className="error">{error}</p>}
+    </div>
+  );
+}
+
+function AddStop({ tripId, onAdding, ...actions }: { tripId: string; onAdding: (name: string | null) => void } & TripActions) {
   const nameId = useId();
   const [picked, setPicked] = useState<LocationDto | null>(null);
   const [name, setName] = useState("");
@@ -67,7 +155,9 @@ function AddStop({ tripId, ...actions }: { tripId: string } & TripActions) {
       return;
     }
     setBusy(true);
+    onAdding(name.trim());
     const failure = await runChange(tripId, () => tripApiClient.addStop(tripId, name, picked), actions);
+    onAdding(null);
     setBusy(false);
     setError(failure);
     if (!failure) {
@@ -117,9 +207,25 @@ type Editing = "none" | "rename" | "move";
 function StopItem({
   tripId,
   stop,
+  number,
   isStart,
+  placement,
+  legToNext,
+  backToStart,
   ...actions
-}: { tripId: string; stop: StopDto; isStart: boolean } & TripActions) {
+}: {
+  tripId: string;
+  stop: StopDto;
+  /** Its place in the list, as on its map marker. */
+  number: number;
+  isStart: boolean;
+  /** Why the Stop isn't in its place on the Route, if it isn't. */
+  placement: string | null;
+  /** The drive on to the next Stop (or back to the Start), if the Route has it. */
+  legToNext: LegDto | undefined;
+  /** Whether `legToNext` is the Round trip's way back to the Start. */
+  backToStart: boolean;
+} & TripActions) {
   const nameId = useId();
   const [editing, setEditing] = useState<Editing>("none");
   const [newName, setNewName] = useState(stop.name);
@@ -152,8 +258,12 @@ function StopItem({
   return (
     <li className={isStart ? "stop is-start" : "stop"}>
       <div className="stop-heading">
+        <span className="stop-number" aria-hidden="true">
+          {number}
+        </span>
         <span className="stop-name">{stop.name}</span>
         {isStart && <span className="badge">Start</span>}
+        {placement && <span className="placement">{placement}</span>}
       </div>
       {stop.address && (
         <div className="stop-detail">
@@ -223,6 +333,12 @@ function StopItem({
         </div>
       )}
       {error && <p className="error">{error}</p>}
+      {legToNext && (
+        <p className="leg">
+          {backToStart ? "↩ Back to the Start: " : "↓ "}
+          {formatDrive(legToNext)}
+        </p>
+      )}
     </li>
   );
 }

@@ -1,6 +1,9 @@
 import { neon } from "@neondatabase/serverless";
 import { schemaStatements } from "./schema.js";
-import type { StopRecord, TripRecord, TripStore } from "./tripStore.js";
+import type { SavedRoute, StopRecord, TripRecord, TripStore, TripSummaryRecord } from "./tripStore.js";
+
+/** The parts of a saved Route kept in the `route` JSONB column; the totals have columns of their own. */
+type RouteJson = Omit<SavedRoute, "distanceMeters" | "durationSeconds">;
 
 interface TripRow {
   id: string;
@@ -9,6 +12,21 @@ interface TripRow {
   updated_at: string | Date;
   revision: number;
   start_stop_id: string | null;
+  round_trip: boolean;
+  route: RouteJson | null;
+  route_distance_m: number | string | null;
+  route_duration_s: number | string | null;
+  route_error: string | null;
+}
+
+interface TripSummaryRow {
+  id: string;
+  name: string;
+  updated_at: string | Date;
+  revision: number;
+  stop_count: number | string;
+  route_distance_m: number | string | null;
+  route_duration_s: number | string | null;
 }
 
 interface StopRow {
@@ -29,8 +47,39 @@ function toRecord(row: TripRow): TripRecord {
     updatedAt: new Date(row.updated_at),
     revision: Number(row.revision),
     startStopId: row.start_stop_id,
+    roundTrip: row.round_trip,
+    route: row.route && {
+      ...row.route,
+      distanceMeters: Number(row.route_distance_m),
+      durationSeconds: Number(row.route_duration_s),
+    },
+    routeError: row.route_error,
   };
 }
+
+function toSummaryRecord(row: TripSummaryRow): TripSummaryRecord {
+  return {
+    id: row.id,
+    name: row.name,
+    updatedAt: new Date(row.updated_at),
+    revision: Number(row.revision),
+    stopCount: Number(row.stop_count),
+    routeTotals:
+      row.route_distance_m === null || row.route_duration_s === null
+        ? null
+        : { distanceMeters: Number(row.route_distance_m), durationSeconds: Number(row.route_duration_s) },
+  };
+}
+
+/** The `route` column's value for a saved Route (as JSON text), or null. */
+function routeJson(route: SavedRoute | null | undefined): string | null {
+  if (!route) return null;
+  const { distanceMeters: _distance, durationSeconds: _duration, ...json } = route;
+  return JSON.stringify(json satisfies RouteJson);
+}
+
+const TRIP_COLUMNS = `id, name, created_at, updated_at, revision, start_stop_id, round_trip,
+  route, route_distance_m, route_duration_s, route_error`;
 
 function toStopRecord(row: StopRow): StopRecord {
   return {
@@ -51,36 +100,53 @@ export function createPostgresTripStore(databaseUrl: string): TripStore {
   return {
     async insertTrip(trip) {
       await sql`
-        INSERT INTO trips (id, name, created_at, updated_at, revision, start_stop_id)
+        INSERT INTO trips (id, name, created_at, updated_at, revision, start_stop_id, round_trip,
+                           route, route_distance_m, route_duration_s, route_error)
         VALUES (${trip.id}, ${trip.name}, ${trip.createdAt.toISOString()}, ${trip.updatedAt.toISOString()},
-                ${trip.revision}, ${trip.startStopId})
+                ${trip.revision}, ${trip.startStopId}, ${trip.roundTrip}, ${routeJson(trip.route)}::jsonb,
+                ${trip.route?.distanceMeters ?? null}, ${trip.route?.durationSeconds ?? null}, ${trip.routeError})
       `;
     },
 
     async listTrips() {
       const rows = (await sql`
-        SELECT id, name, created_at, updated_at, revision, start_stop_id FROM trips
-      `) as TripRow[];
-      return rows.map(toRecord);
+        SELECT id, name, updated_at, revision, route_distance_m, route_duration_s,
+               (SELECT count(*) FROM stops WHERE stops.trip_id = trips.id) AS stop_count
+        FROM trips
+      `) as TripSummaryRow[];
+      return rows.map(toSummaryRecord);
     },
 
     async getTrip(id) {
-      const rows = (await sql`
-        SELECT id, name, created_at, updated_at, revision, start_stop_id FROM trips WHERE id = ${id}
-      `) as TripRow[];
+      const rows = (await sql.query(`SELECT ${TRIP_COLUMNS} FROM trips WHERE id = $1`, [id])) as TripRow[];
       return rows[0] && toRecord(rows[0]);
     },
 
-    async updateTrip(id, changes) {
+    async getRevision(id) {
+      const rows = (await sql`SELECT revision FROM trips WHERE id = ${id}`) as { revision: number }[];
+      return rows[0] && Number(rows[0].revision);
+    },
+
+    async updateTrip(id, changes, ifRevision) {
       const setsStart = changes.startStopId !== undefined;
+      const setsRoute = changes.route !== undefined;
+      const setsRouteError = changes.routeError !== undefined;
       const rows = (await sql`
         UPDATE trips
         SET name = COALESCE(${changes.name ?? null}::text, name),
             start_stop_id = CASE WHEN ${setsStart}::boolean THEN ${changes.startStopId ?? null}::text ELSE start_stop_id END,
+            round_trip = COALESCE(${changes.roundTrip ?? null}::boolean, round_trip),
+            route = CASE WHEN ${setsRoute}::boolean THEN ${routeJson(changes.route)}::jsonb ELSE route END,
+            route_distance_m = CASE WHEN ${setsRoute}::boolean
+              THEN ${changes.route?.distanceMeters ?? null}::double precision ELSE route_distance_m END,
+            route_duration_s = CASE WHEN ${setsRoute}::boolean
+              THEN ${changes.route?.durationSeconds ?? null}::double precision ELSE route_duration_s END,
+            route_error = CASE WHEN ${setsRouteError}::boolean THEN ${changes.routeError ?? null}::text ELSE route_error END,
             updated_at = ${changes.updatedAt.toISOString()},
             revision = revision + 1
-        WHERE id = ${id}
-        RETURNING id, name, created_at, updated_at, revision, start_stop_id
+        WHERE id = ${id} AND (${ifRevision ?? null}::integer IS NULL OR revision = ${ifRevision ?? null}::integer)
+        RETURNING id, name, created_at, updated_at, revision, start_stop_id, round_trip,
+                  route, route_distance_m, route_duration_s, route_error
       `) as TripRow[];
       return rows[0] && toRecord(rows[0]);
     },

@@ -243,16 +243,6 @@ describe("Trip API: adding Stops", () => {
     expect(added.body).toEqual({ error: expect.any(String) });
   });
 
-  it("lists Stops in the order they were added", async () => {
-    const { addStop } = await tripWithApi();
-
-    await addStop("First", espejo);
-    await addStop("Second", desert);
-    const added = await addStop("Third", carWash);
-
-    expect(added.body.stops.map((stop: { name: string }) => stop.name)).toEqual(["First", "Second", "Third"]);
-  });
-
   it("makes the first Stop added the Start, and keeps it there as more are added", async () => {
     const { addStop } = await tripWithApi();
 
@@ -421,7 +411,9 @@ describe("Trip API: the Start", () => {
     await setup.addStop("Walt's house", espejo);
     await setup.addStop("The cook site", desert);
     const added = await setup.addStop("The car wash", carWash);
-    const [walts, cookSite, carWashStop] = added.body.stops;
+    // Stops are listed in Route order, so pick them out by name.
+    const named = (name: string) => added.body.stops.find((stop: { name: string }) => stop.name === name);
+    const [walts, cookSite, carWashStop] = [named("Walt's house"), named("The cook site"), named("The car wash")];
     return { ...setup, added, walts, cookSite, carWashStop };
   }
 
@@ -432,7 +424,10 @@ describe("Trip API: the Start", () => {
 
     expect(made.status).toBe(200);
     expect(made.body.startStopId).toBe(carWashStop.id);
-    expect(made.body.stops).toEqual(added.body.stops);
+    // The same Stops, now driven from the new Start.
+    expect(made.body.stops).toHaveLength(added.body.stops.length);
+    expect(made.body.stops).toEqual(expect.arrayContaining(added.body.stops));
+    expect(made.body.stops[0]).toEqual(carWashStop);
     expect(made.body.revision).not.toBe(added.body.revision);
     expect((await api.get(tripPath)).body).toEqual(made.body);
   });
