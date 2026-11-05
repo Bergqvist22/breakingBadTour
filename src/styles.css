@@ -1,185 +1,725 @@
-/* Placeholder styling; the Breaking Bad theme arrives in a later ticket. */
+/*
+ * Breaking Bad theme: a New Mexico night. Chemistry green, hazmat yellow, desert sand
+ * and crystal blue over a dark lab-green background. Phone first; map and list side by
+ * side from 60rem.
+ */
 :root {
   color-scheme: dark;
-  font-family: system-ui, sans-serif;
-  background: #111;
-  color: #eee;
+
+  /* Palette */
+  --night: #0b100c;
+  --surface: #131b15;
+  --surface-2: #1a241c;
+  --line: #2c3a2e;
+  --line-strong: #4a5c4b;
+  --sand: #e9d9b4;
+  --text: #f1e9d6;
+  --muted: #b3a98f;
+  --green: #2e8b3e;
+  --green-deep: #174d23;
+  --green-light: #85dd6f;
+  --hazmat: #f5c518;
+  --hazmat-ink: #15150c;
+  --crystal: #5fd4ff;
+  --danger: #b3261e;
+  --danger-line: #e0533f;
+  --danger-text: #ff8f7a;
+  --notice: #ecd68e;
+
+  /* Type */
+  --font-display: "Big Shoulders Display", "Archivo Narrow", "Arial Narrow", sans-serif;
+  --font-body: "Archivo", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  --radius: 0.4rem;
+  --tap: 2.75rem;
+  --gutter: 1rem;
+
+  font-family: var(--font-body);
+  line-height: 1.5;
+  color: var(--text);
+  background: var(--night);
+  -webkit-text-size-adjust: 100%;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
 body {
   margin: 0;
+  min-height: 100vh;
+  background-color: var(--night);
+  /* A faint periodic-table grid under a dim desert-dusk glow. */
+  background-image:
+    radial-gradient(ellipse 120% 60% at 50% -10%, rgba(214, 140, 60, 0.16), transparent 60%),
+    radial-gradient(ellipse 80% 50% at 100% 0%, rgba(46, 139, 62, 0.14), transparent 70%),
+    linear-gradient(rgba(133, 221, 111, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(133, 221, 111, 0.035) 1px, transparent 1px);
+  background-size:
+    auto,
+    auto,
+    3rem 3rem,
+    3rem 3rem;
+  background-attachment: fixed;
+  overflow-x: hidden;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: 0.01em;
+}
+
+a {
+  color: var(--crystal);
+  text-underline-offset: 0.18em;
+}
+
+:focus-visible {
+  outline: 3px solid var(--crystal);
+  outline-offset: 2px;
 }
 
 .page {
-  max-width: 40rem;
+  max-width: 44rem;
   margin: 0 auto;
+  padding: 1rem var(--gutter) 3rem;
+}
+
+/* ---------- App title: element tiles, built in code ---------- */
+
+.app-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 800;
+  line-height: 1;
+  color: var(--sand);
+}
+
+.app-title-tiles {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 0.08em;
+}
+
+.app-title-word {
+  display: inline-flex;
+  align-items: flex-end;
+}
+
+.app-title-indent {
+  padding-left: 0.9em;
+}
+
+.app-title-rest {
+  padding-left: 0.04em;
+  font-size: 0.86em;
+  line-height: 1;
+  text-shadow: 0 0 0.3em rgba(0, 0, 0, 0.6);
+}
+
+.element-tile {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 1.18em;
+  height: 1.18em;
+  flex: none;
+  border: 0.035em solid var(--green-light);
+  border-radius: 0.06em;
+  background: linear-gradient(150deg, #3a9c46 0%, var(--green) 35%, var(--green-deep) 100%);
+  color: #fff;
+  box-shadow:
+    inset 0 0 0.12em rgba(255, 255, 255, 0.18),
+    0 0.08em 0.25em rgba(0, 0, 0, 0.55);
+  animation: tile-in 0.6s cubic-bezier(0.2, 0.8, 0.2, 1.2) both;
+}
+
+.app-title-indent .element-tile {
+  animation-delay: 0.12s;
+}
+
+.element-symbol {
+  font-size: 0.74em;
+  line-height: 1;
+  transform: translateY(0.04em);
+}
+
+.element-number,
+.element-mass {
+  position: absolute;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.element-number {
+  top: 0.1em;
+  left: 0.12em;
+  font-size: 0.15em;
+}
+
+.element-mass {
+  bottom: 0.1em;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.12em;
+  white-space: nowrap;
+}
+
+.app-title-tour {
+  align-self: center;
+  margin-left: 0.3em;
+  padding: 0.12em 0.32em 0.08em;
+  font-size: 0.36em;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--hazmat-ink);
+  background: var(--hazmat);
+  transform: rotate(-4deg);
+  box-shadow: 0 0.1em 0.3em rgba(0, 0, 0, 0.5);
+  animation: tile-in 0.6s 0.25s cubic-bezier(0.2, 0.8, 0.2, 1.2) both;
+}
+
+@keyframes tile-in {
+  from {
+    opacity: 0;
+    transform: translateY(-0.3em) scale(0.9);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .element-tile,
+  .app-title-tour {
+    animation: none;
+  }
+}
+
+/* Small title on the Trip page: one line, a link home. */
+.app-title-small {
+  display: inline-block;
+  font-size: 1.55rem;
+  text-decoration: none;
+  /* A tap-sized target without growing the tiles. */
+  padding: 0.45rem 0.25rem 0.45rem 0;
+}
+
+.app-title-small .app-title-tiles {
+  flex-direction: row;
+  gap: 0.3em;
+}
+
+.app-title-small .app-title-indent {
+  padding-left: 0;
+}
+
+.app-title-small .element-mass {
+  display: none;
+}
+
+.app-title-small .app-title-tour {
+  font-size: 0.5em;
+  letter-spacing: 0.12em;
+}
+
+@media (min-width: 60rem) {
+  .app-title-small {
+    font-size: 1.9rem;
+  }
+}
+
+.app-title-small:hover .app-title-rest,
+.app-title-small:focus-visible .app-title-rest {
+  color: var(--hazmat);
+}
+
+/* ---------- Start page ---------- */
+
+.start-header {
+  padding: 1.5rem 0 1.75rem;
+}
+
+.start-header .app-title {
+  font-size: clamp(3rem, 15vw, 5.5rem);
+}
+
+.tagline {
+  margin: 1.25rem 0 0;
+  max-width: 30rem;
+  color: var(--muted);
+  font-size: 1.05rem;
+}
+
+.panel {
   padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 0.6rem;
+  background: linear-gradient(180deg, var(--surface-2), var(--surface));
+  box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.3);
 }
 
 .new-trip label {
   display: block;
-  font-weight: 600;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.6rem;
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  font-weight: 800;
+  line-height: 1.1;
+  color: var(--hazmat);
 }
 
-.input-row {
-  flex-wrap: wrap;
+.section-title {
   display: flex;
-  gap: 0.5rem;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 2.25rem 0 0.75rem;
+  font-size: 1.15rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--green-light);
 }
 
-.input-row input {
-  flex-basis: 12rem;
+.section-title::after {
+  content: "";
   flex: 1;
-  min-width: 0;
-  padding: 0.6rem;
-  font-size: 1rem;
+  height: 1px;
+  background: linear-gradient(90deg, var(--line-strong), transparent);
 }
 
-.input-row button {
-  padding: 0.6rem 1rem;
-  font-size: 1rem;
+.empty,
+.loading {
+  color: var(--muted);
 }
 
-.error {
-  color: #ff8080;
+.empty {
+  padding: 1rem;
+  border: 1px dashed var(--line-strong);
+  border-radius: 0.6rem;
 }
 
 .trip-list {
-  list-style: none;
+  display: grid;
+  gap: 0.6rem;
+  margin: 0;
   padding: 0;
-}
-
-.trip-list li {
-  border-bottom: 1px solid #333;
+  list-style: none;
 }
 
 .trip-list a {
   display: flex;
   flex-direction: column;
-  padding: 0.75rem 0;
+  gap: 0.15rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--green);
+  border-radius: var(--radius);
+  background: var(--surface);
   color: inherit;
   text-decoration: none;
+  transition:
+    border-color 0.15s,
+    background 0.15s,
+    transform 0.15s;
 }
 
-.trip-list a:hover .trip-name,
-.trip-list a:focus-visible .trip-name {
-  text-decoration: underline;
+.trip-list a:hover,
+.trip-list a:focus-visible {
+  border-left-color: var(--hazmat);
+  background: var(--surface-2);
+  transform: translateX(2px);
 }
 
 .trip-name {
-  font-weight: 600;
+  font-family: var(--font-display);
+  font-size: 1.45rem;
+  font-weight: 800;
+  line-height: 1.1;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.trip-facts {
+  font-size: 0.92rem;
+  color: var(--sand);
 }
 
 .trip-changed {
-  font-size: 0.875rem;
-  opacity: 0.7;
+  font-size: 0.85rem;
+  color: var(--muted);
 }
 
-a {
-  color: #8fd3ff;
+/* ---------- Forms and buttons ---------- */
+
+.input-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
-button {
-  cursor: pointer;
-}
-
-button.secondary {
-  background: transparent;
-  color: inherit;
-  border: 1px solid #555;
-}
-
-button.danger {
-  background: #8b1e1e;
-  color: #fff;
-  border: 1px solid #b33;
-  padding: 0.6rem 1rem;
+input[type="text"],
+input:not([type]) {
+  min-height: var(--tap);
+  padding: 0.55rem 0.75rem;
+  border: 1.5px solid var(--line-strong);
+  border-radius: var(--radius);
+  background: #0d130e;
+  color: var(--text);
+  /* 16px or more stops phones zooming in on focus. */
+  font: inherit;
   font-size: 1rem;
 }
 
+input::placeholder {
+  color: #7f8a78;
+}
+
+input:focus-visible {
+  outline: none;
+  border-color: var(--crystal);
+  box-shadow: 0 0 0 3px rgba(95, 212, 255, 0.25);
+}
+
+.input-row input {
+  flex: 1 1 12rem;
+  min-width: 0;
+}
+
+button {
+  min-height: var(--tap);
+  padding: 0.55rem 1.1rem;
+  border: 2px solid var(--hazmat);
+  border-radius: var(--radius);
+  background: var(--hazmat);
+  color: var(--hazmat-ink);
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    color 0.15s;
+}
+
+button:hover:not(:disabled) {
+  background: #ffd84a;
+  border-color: #ffd84a;
+}
+
+button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+button.secondary {
+  border: 1.5px solid var(--line-strong);
+  background: transparent;
+  color: var(--sand);
+}
+
+button.secondary:hover:not(:disabled) {
+  border-color: var(--sand);
+  background: rgba(233, 217, 180, 0.08);
+}
+
+button.danger {
+  border: 1.5px solid var(--danger-line);
+  background: var(--danger);
+  color: #fff;
+}
+
+button.danger:hover:not(:disabled) {
+  border-color: #ff7a63;
+  background: #c9322a;
+}
+
+button.small {
+  padding: 0.35rem 0.8rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+/* On a wide screen with a mouse, the small buttons can be a little shorter; phones keep the full tap size. */
+@media (min-width: 60rem) and (pointer: fine) {
+  button.small {
+    min-height: 2.25rem;
+  }
+}
+
+.error {
+  color: var(--danger-text);
+}
+
+.notice {
+  color: var(--notice);
+}
+
+/* ---------- Trip page ---------- */
+
+.site-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.25rem 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--line);
+}
+
 .back-link {
-  display: inline-block;
-  padding: 0.5rem 0;
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
+  padding: 0 0.25rem;
+  font-weight: 600;
 }
 
 .trip-header {
   display: flex;
-  align-items: center;
-  gap: 1rem;
   flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  margin: 1rem 0;
 }
 
 .trip-header h1 {
-  margin-right: auto;
+  margin: 0 auto 0 0;
+  font-size: clamp(2rem, 8vw, 2.8rem);
   overflow-wrap: anywhere;
 }
 
-.trip-header button {
-  padding: 0.5rem 1rem;
-  font-size: 1rem;
-}
-
 .rename-trip {
-  margin: 1.5rem 0;
+  margin: 1rem 0;
 }
 
 .rename-trip label {
   display: block;
-  font-weight: 600;
   margin-bottom: 0.5rem;
+  font-weight: 700;
 }
 
-.danger-zone {
-  margin-top: 3rem;
-  padding-top: 1rem;
-  border-top: 1px solid #333;
+/* Phone: the map sticks to the top while the Stops and totals scroll underneath. */
+.trip-map {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  isolation: isolate;
+  height: clamp(14rem, 42vh, 24rem);
+  margin: 0 calc(-1 * var(--gutter));
+  background: var(--night);
+  box-shadow: 0 0.6rem 1rem -0.4rem rgba(0, 0, 0, 0.7);
 }
 
-.confirm-delete {
-  padding: 1rem;
-  border: 1px solid #b33;
-  border-radius: 0.5rem;
-  background: #2a1414;
+.route-map {
+  height: 100%;
+  background: #121812;
+  font-family: var(--font-body);
 }
 
-.confirm-delete p {
-  margin-top: 0;
+/* A dark map from the light OpenStreetMap tiles; the Route line and markers keep their colours. */
+.route-map .leaflet-tile-pane {
+  filter: invert(1) hue-rotate(180deg) brightness(0.85) contrast(0.92) saturate(0.55);
 }
 
-/* Stops (ticket 04). */
+.route-map .leaflet-control-attribution {
+  background: rgba(11, 16, 12, 0.85);
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.route-map .leaflet-control-attribution a {
+  color: var(--crystal);
+}
+
+.route-map .leaflet-bar {
+  border: 1px solid var(--line-strong);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+.route-map .leaflet-bar a {
+  width: var(--tap);
+  height: var(--tap);
+  line-height: var(--tap);
+  font-size: 1.3rem;
+  border-bottom-color: var(--line-strong);
+  background: var(--surface-2);
+  color: var(--sand);
+}
+
+.route-map .leaflet-bar a:hover {
+  background: var(--line);
+  color: var(--hazmat);
+}
+
+.route-map .leaflet-tooltip {
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+.route-map .leaflet-tooltip-top::before {
+  border-top-color: var(--line-strong);
+}
+
+.trip-side {
+  min-width: 0;
+}
+
+/* Desktop: map and list side by side; the map stays in view while the list scrolls. */
+@media (min-width: 60rem) {
+  .trip-page {
+    max-width: 92rem;
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+
+  .trip-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(24rem, 1fr);
+    gap: 2rem;
+    align-items: start;
+  }
+
+  .trip-map {
+    top: 1rem;
+    height: calc(100vh - 2rem);
+    margin: 0;
+    border: 1px solid var(--line);
+    border-radius: 0.6rem;
+    overflow: hidden;
+  }
+
+  .trip-side .section-title:first-child {
+    margin-top: 0;
+  }
+}
+
+/* ---------- Stops ---------- */
+
 .stops {
-  margin-top: 2rem;
+  margin-top: 0.5rem;
+}
+
+.route-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 1rem;
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: 0.6rem;
+  background: var(--surface);
+}
+
+.route-summary > .error {
+  flex-basis: 100%;
+  margin: 0.25rem 0 0;
+}
+
+.totals {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.15rem 0.6rem;
+  flex-basis: 100%;
+  margin: 0;
+}
+
+.totals span {
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.totals strong {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  font-weight: 800;
+  line-height: 1.1;
+  color: var(--crystal);
+}
+
+.round-trip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-height: var(--tap);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.round-trip input {
+  width: 1.35rem;
+  height: 1.35rem;
+  margin: 0;
+  accent-color: var(--hazmat);
+}
+
+.placement {
+  font-size: 0.85rem;
+  font-style: italic;
+  color: var(--notice);
 }
 
 .stop-list {
-  list-style: none;
-  padding: 0;
   margin: 0 0 1.5rem;
+  padding: 0;
+  list-style: none;
 }
 
 .stop {
-  padding: 0.75rem 0;
-  border-bottom: 1px solid #333;
+  padding: 0.85rem 0 0.5rem;
+  border-top: 1px solid var(--line);
+}
+
+.stop:first-child {
+  border-top: none;
+}
+
+.stop.is-adding {
+  opacity: 0.7;
 }
 
 .stop-heading {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.4rem 0.6rem;
 }
 
 .stop-name {
-  font-weight: 600;
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 800;
+  line-height: 1.1;
   overflow-wrap: anywhere;
+  min-width: 0;
 }
 
 .badge {
-  font-size: 0.75rem;
-  padding: 0.1rem 0.5rem;
-  border-radius: 999px;
-  background: #2d5a27;
-  color: #fff;
+  padding: 0.15rem 0.5rem;
+  border-radius: 0.2rem;
+  background: var(--hazmat);
+  color: var(--hazmat-ink);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
 
 .stop-detail {
@@ -187,15 +727,17 @@ button.danger {
   flex-wrap: wrap;
   align-items: center;
   gap: 0.25rem 0.75rem;
-  margin-top: 0.35rem;
-  font-size: 0.9rem;
+  margin-top: 0.4rem;
+  padding-left: 2.75rem;
+  font-size: 0.92rem;
+  color: var(--sand);
   overflow-wrap: anywhere;
 }
 
 .coords {
-  font-family: ui-monospace, monospace;
-  font-size: 0.85rem;
-  opacity: 0.8;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  color: var(--muted);
 }
 
 .stop-actions {
@@ -203,30 +745,86 @@ button.danger {
   flex-wrap: wrap;
   gap: 0.5rem;
   margin-top: 0.6rem;
-}
-
-button.small {
-  min-height: 2.25rem;
-  padding: 0.3rem 0.75rem;
-  font-size: 0.875rem;
+  padding-left: 2.75rem;
 }
 
 .stop-edit {
   margin-top: 0.75rem;
 }
 
+.stop .error {
+  padding-left: 2.75rem;
+}
+
+/* The drive to the next Stop, drawn as a dashed crystal-blue line down from the number tile. */
+.leg {
+  margin: 0.6rem 0 0 1.05rem;
+  padding: 0.25rem 0 0.25rem 1.6rem;
+  border-left: 2px dashed var(--crystal);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--crystal);
+}
+
+/* Numbered element tiles: in the Stop list and as the map's markers. */
+.stop-marker {
+  background: transparent;
+  border: none;
+}
+
+.stop-marker-tile,
+.stop-number {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 2.15rem;
+  height: 2.15rem;
+  flex: none;
+  border: 2px solid var(--green-light);
+  border-radius: 0.2rem;
+  background: linear-gradient(150deg, #3a9c46, var(--green-deep));
+  color: #fff;
+  /* Mono digits: a clear 1 (the display face's 1 reads like an I). */
+  font: 700 1rem/1 var(--font-mono);
+  box-shadow: inset 0 0 0.25rem rgba(255, 255, 255, 0.2);
+}
+
+.stop-marker-tile {
+  width: 34px;
+  height: 34px;
+  font-size: 16px;
+  box-shadow:
+    inset 0 0 4px rgba(255, 255, 255, 0.2),
+    0 3px 8px rgba(0, 0, 0, 0.75);
+}
+
+.stop-marker-tile.is-start,
+.is-start .stop-number {
+  border-color: #fff1a8;
+  background: linear-gradient(150deg, #ffd84a, #c99a00);
+  color: var(--hazmat-ink);
+}
+
+/* ---------- Search, add, edit ---------- */
+
+.add-stop h3 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: var(--hazmat);
+}
+
 .location-search label,
 .add-stop label,
 .stop-edit label {
   display: block;
-  font-weight: 600;
   margin: 0.75rem 0 0.5rem;
+  font-weight: 700;
 }
 
 .matches {
-  list-style: none;
-  padding: 0;
   margin: 0.75rem 0;
+  padding: 0;
+  list-style: none;
 }
 
 .matches li + li {
@@ -239,19 +837,20 @@ button.match {
   align-items: flex-start;
   gap: 0.2rem;
   width: 100%;
-  min-height: 2.75rem;
   padding: 0.6rem 0.75rem;
-  text-align: left;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  background: #0d130e;
+  color: var(--text);
   font-size: 0.95rem;
-  background: #1c1c1c;
-  color: inherit;
-  border: 1px solid #444;
-  border-radius: 0.4rem;
+  font-weight: 500;
+  text-align: left;
 }
 
-button.match:hover,
+button.match:hover:not(:disabled),
 button.match:focus-visible {
-  border-color: #8fd3ff;
+  border-color: var(--crystal);
+  background: var(--surface-2);
 }
 
 .picked {
@@ -259,104 +858,40 @@ button.match:focus-visible {
   flex-wrap: wrap;
   align-items: center;
   gap: 0.25rem 0.75rem;
+  margin: 0.75rem 0 0;
+  color: var(--sand);
 }
 
-.notice {
-  color: #e8d48b;
+/* ---------- Danger zone ---------- */
+
+.danger-zone {
+  margin-top: 2.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--line);
 }
 
-/* Route (ticket 05). Functional only; the Breaking Bad theme comes later. */
-.trip-facts {
-  font-size: 0.9rem;
+.confirm-delete {
+  padding: 1rem;
+  border: 1.5px solid var(--danger-line);
+  border-radius: 0.6rem;
+  background:
+    repeating-linear-gradient(-45deg, rgba(245, 197, 24, 0.07) 0 12px, transparent 12px 24px),
+    #2a1311;
 }
 
-.route-map {
-  height: 22rem;
-  margin-top: 1rem;
-  border-radius: 0.5rem;
-  background: #1a1a1a;
+.confirm-delete p {
+  margin-top: 0;
 }
 
-/* A dark map from the light OpenStreetMap tiles; the Route line and markers keep their colours. */
-.route-map .leaflet-tile-pane {
-  filter: invert(1) hue-rotate(180deg) brightness(0.9) contrast(0.9);
+.confirm-delete strong {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  color: var(--hazmat);
 }
 
-.route-map .leaflet-control-attribution {
-  background: rgba(17, 17, 17, 0.8);
-  color: #bbb;
-}
+/* ---------- Not found ---------- */
 
-.route-map .leaflet-control-attribution a {
-  color: #8fd3ff;
-}
-
-.stop-marker {
-  background: transparent;
-  border: none;
-}
-
-.stop-marker-tile,
-.stop-number {
-  display: grid;
-  place-items: center;
-  width: 2rem;
-  height: 2rem;
-  flex: none;
-  border-radius: 0.3rem;
-  background: #1f5f33;
-  border: 2px solid #9fe870;
-  color: #fff;
-  font: 700 0.95rem/1 system-ui, sans-serif;
-  box-sizing: border-box;
-}
-
-.stop-marker-tile {
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
-}
-
-.stop-marker-tile.is-start,
-.is-start .stop-number {
-  background: #8a6d00;
-  border-color: #ffd23f;
-}
-
-.route-summary {
-  margin-bottom: 1rem;
-}
-
-.totals {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.25rem 0.75rem;
-  font-size: 1.1rem;
-}
-
-.round-trip {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  min-height: 2.75rem;
-  cursor: pointer;
-}
-
-.round-trip input {
-  width: 1.25rem;
-  height: 1.25rem;
-}
-
-.placement {
-  font-size: 0.85rem;
-  font-style: italic;
-  color: #e8d48b;
-}
-
-.stop.is-adding {
-  opacity: 0.7;
-}
-
-.leg {
-  margin: 0.6rem 0 0;
-  font-size: 0.9rem;
-  color: #8fd3ff;
+.not-found h1 {
+  margin-top: 1.5rem;
+  font-size: 2.4rem;
 }

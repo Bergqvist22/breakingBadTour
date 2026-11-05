@@ -49,10 +49,10 @@ export function StopsSection({ trip, ...actions }: { trip: TripDto } & TripActio
 
   return (
     <section className="stops">
-      <h2>Stops</h2>
+      <h2 className="section-title">Stops</h2>
       <RouteSummary trip={trip} {...actions} />
       {trip.stops.length === 0 && !adding ? (
-        <p>No Stops yet. Add the first one below; it becomes the Start.</p>
+        <p className="empty">Nothing cooking yet. Add the first Stop below; it becomes the Start.</p>
       ) : (
         <ol className="stop-list">
           {trip.stops.map((stop, i) => {
@@ -168,7 +168,7 @@ function AddStop({ tripId, onAdding, ...actions }: { tripId: string; onAdding: (
   }
 
   return (
-    <div className="add-stop">
+    <div className="add-stop panel">
       <h3>Add a Stop</h3>
       {picked ? (
         <form onSubmit={onAdd}>

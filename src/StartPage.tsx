@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import type { TripSummaryDto } from "../shared/apiTypes";
+import { AppTitle } from "./AppTitle";
 import { formatDrive } from "./format";
 import { followLink, navigate, tripUrl } from "./router";
 import { tripApiClient } from "./tripApiClient";
@@ -59,10 +60,13 @@ export function StartPage() {
   }
 
   return (
-    <main className="page">
-      <h1>Breaking Bad Tour</h1>
+    <main className="page start-page">
+      <header className="start-header">
+        <AppTitle />
+        <p className="tagline">Plan a road trip stop by stop. We work out the shortest Route.</p>
+      </header>
 
-      <form className="new-trip" onSubmit={onCreate}>
+      <form className="new-trip panel" onSubmit={onCreate}>
         <label htmlFor="new-trip-name">Cook up a new Trip</label>
         <div className="input-row">
           <input
@@ -79,11 +83,11 @@ export function StartPage() {
         {createError && <p className="error">{createError}</p>}
       </form>
 
-      <section>
-        <h2>Trips</h2>
+      <section className="trips">
+        <h2 className="section-title">Trips</h2>
         {loadError && <p className="error">Couldn't load Trips: {loadError}</p>}
-        {trips === null && !loadError && <p>Loading…</p>}
-        {trips?.length === 0 && <p>No Trips yet. Cook one up above.</p>}
+        {trips === null && !loadError && <p className="loading">Loading Trips…</p>}
+        {trips?.length === 0 && <p className="empty">The lab is empty. No Trips yet: cook one up above.</p>}
         {trips && trips.length > 0 && (
           <ul className="trip-list">
             {trips.map((trip) => (
