@@ -26,4 +26,12 @@ export const schemaStatements: string[] = [
     created_at TIMESTAMPTZ NOT NULL
   )`,
   `CREATE INDEX IF NOT EXISTS stops_trip_id_created_at_idx ON stops (trip_id, created_at)`,
+  // Ticket 05: Round trip and the saved Route. The Route's order, Legs, line and basis
+  // live in one JSONB value; its totals get their own columns so listing Trips never
+  // reads the (large) line.
+  `ALTER TABLE trips ADD COLUMN IF NOT EXISTS round_trip BOOLEAN NOT NULL DEFAULT false`,
+  `ALTER TABLE trips ADD COLUMN IF NOT EXISTS route JSONB`,
+  `ALTER TABLE trips ADD COLUMN IF NOT EXISTS route_distance_m DOUBLE PRECISION`,
+  `ALTER TABLE trips ADD COLUMN IF NOT EXISTS route_duration_s DOUBLE PRECISION`,
+  `ALTER TABLE trips ADD COLUMN IF NOT EXISTS route_error TEXT`,
 ];

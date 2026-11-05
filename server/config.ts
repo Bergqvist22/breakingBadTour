@@ -3,6 +3,7 @@ import { createMemoryTripStore } from "./store/memoryTripStore.js";
 import { createPostgresTripStore } from "./store/postgresTripStore.js";
 import type { TripStore } from "./store/tripStore.js";
 import { createNominatimGeocoder } from "./geocoder/nominatimGeocoder.js";
+import { createOsrmRoutingProvider } from "./routing/osrmRoutingProvider.js";
 
 type Env = Record<string, string | undefined>;
 
@@ -34,5 +35,6 @@ export function createTripApiFromEnv(env: Env = process.env): TripApi {
   return createTripApi({
     store: createStoreFromEnv(env),
     geocoder: createNominatimGeocoder({ userAgent: env.NOMINATIM_USER_AGENT || undefined }),
+    routing: createOsrmRoutingProvider({ userAgent: env.OSRM_USER_AGENT || undefined, baseUrl: env.OSRM_URL || undefined }),
   });
 }

@@ -11,6 +11,47 @@ export interface TripRecord {
    * since been removed; the Trip service then falls back to the oldest Stop.
    */
   startStopId: string | null;
+  /** Whether the Route returns to the Start. */
+  roundTrip: boolean;
+  /** The last successfully calculated Route, or null if there is none. */
+  route: SavedRoute | null;
+  /**
+   * Why the Route couldn't be brought up to date after the last change that needed it
+   * (the saved Route is then the last good one), or null if it is up to date.
+   */
+  routeError: string | null;
+}
+
+/** The drive between two consecutive Stops of a Route. */
+export interface SavedLeg {
+  fromStopId: string;
+  toStopId: string;
+  distanceMeters: number;
+  durationSeconds: number;
+}
+
+/** A Route as it was calculated and saved, so every viewer sees the same one. */
+export interface SavedRoute {
+  /** The Stops in driving order, beginning at the Start. A Round trip's last Leg goes back to the first. */
+  stopIds: string[];
+  legs: SavedLeg[];
+  distanceMeters: number;
+  durationSeconds: number;
+  /** The line along the roads, as [lat, lng] pairs. */
+  line: [number, number][];
+  /** What the Route was calculated from (see `routeBasis`), to tell when it is out of date. */
+  basis: string;
+}
+
+/** A Trip as the start page lists it. */
+export interface TripSummaryRecord {
+  id: string;
+  name: string;
+  updatedAt: Date;
+  revision: number;
+  stopCount: number;
+  /** The saved Route's totals, or null if there is none. */
+  routeTotals: { distanceMeters: number; durationSeconds: number } | null;
 }
 
 /** A Stop as it is persisted. */
@@ -40,15 +81,18 @@ export interface StopLocation {
  */
 export interface TripStore {
   insertTrip(trip: TripRecord): Promise<void>;
-  /** All Trips, in no particular order. */
-  listTrips(): Promise<TripRecord[]>;
+  /** A summary of every Trip, in no particular order. */
+  listTrips(): Promise<TripSummaryRecord[]>;
   /** The Trip with this id, or undefined if there is none. */
   getTrip(id: string): Promise<TripRecord | undefined>;
+  /** Just the Trip's revision (cheap, for polling), or undefined if there is no such Trip. */
+  getRevision(id: string): Promise<number | undefined>;
   /**
    * Applies the changes, adds one to the revision and returns the updated Trip,
-   * or undefined if there is none.
+   * or undefined if there is none. With `ifRevision`, only does so if the Trip's
+   * revision is still that one (otherwise returns undefined and changes nothing).
    */
-  updateTrip(id: string, changes: TripChanges): Promise<TripRecord | undefined>;
+  updateTrip(id: string, changes: TripChanges, ifRevision?: number): Promise<TripRecord | undefined>;
   /** Removes the Trip and its Stops; returns false if there was none. */
   deleteTrip(id: string): Promise<boolean>;
 
@@ -70,6 +114,9 @@ export interface TripChanges {
   name?: string;
   /** Set (or with null, clear) the picked Start. Left out, the Start is unchanged. */
   startStopId?: string | null;
+  roundTrip?: boolean;
+  route?: SavedRoute | null;
+  routeError?: string | null;
   updatedAt: Date;
 }
 

@@ -19,6 +19,8 @@ describe("Trip API: creating and listing Trips", () => {
           name: "Albuquerque weekend",
           updatedAt: created.body.updatedAt,
           revision: created.body.revision,
+          stopCount: 0,
+          route: null,
         },
       ],
     });
@@ -184,7 +186,9 @@ describe("Trip API: managing a Trip", () => {
     expect(deleted.status).toBe(204);
     expect((await api.get(`/api/trips/${doomed.body.id}`)).status).toBe(404);
     expect((await api.get("/api/trips")).body).toEqual({
-      trips: [{ id: kept.body.id, name: "Kept", updatedAt: kept.body.updatedAt, revision: kept.body.revision }],
+      trips: [
+        { id: kept.body.id, name: "Kept", updatedAt: kept.body.updatedAt, revision: kept.body.revision, stopCount: 0, route: null },
+      ],
     });
   });
 
@@ -221,6 +225,26 @@ describe("Trip API: revisions for polling", () => {
     const revisions = [created.body.revision, first.body.revision, second.body.revision];
     expect(new Set(revisions).size).toBe(3);
     expect((await api.get(`/api/trips/${created.body.id}`)).body.revision).toBe(second.body.revision);
+  });
+
+  it("tells a poller a Trip's current revision without sending the whole Trip", async () => {
+    const api = createTestApi();
+    const created = await api.post("/api/trips", { name: "Fresh" });
+    const renamed = await api.patch(`/api/trips/${created.body.id}`, { name: "Renamed" });
+
+    const polled = await api.get(`/api/trips/${created.body.id}/revision`);
+
+    expect(polled.status).toBe(200);
+    expect(polled.body).toEqual({ revision: renamed.body.revision });
+  });
+
+  it("answers 404 when polling the revision of a Trip that doesn't exist", async () => {
+    const api = createTestApi();
+
+    const polled = await api.get("/api/trips/no-such-trip/revision");
+
+    expect(polled.status).toBe(404);
+    expect(polled.body).toEqual({ error: expect.any(String) });
   });
 
   it("keeps the revision when a rename is rejected", async () => {
