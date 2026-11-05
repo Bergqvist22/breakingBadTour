@@ -1,15 +1,17 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import type { TripDto } from "../shared/apiTypes";
 import { followLink, navigate } from "./router";
-import { StopsSection } from "./StopsSection";
+import { RouteMap } from "./RouteMap";
+import { shownRoute, StopsSection } from "./StopsSection";
 import { ApiError, tripApiClient } from "./tripApiClient";
 import { usePolling } from "./usePolling";
 
 type Load = { state: "loading" } | { state: "loaded"; trip: TripDto } | { state: "notFound" } | { state: "error"; message: string };
 
 /**
- * One Trip's page: its name (rename), its Stops, and deleting (after a "Tread lightly"
- * confirmation). Polls every 3 seconds and only re-renders when the Trip's revision moved.
+ * One Trip's page: its name (rename), a map of its Route, its Stops, and deleting (after
+ * a "Tread lightly" confirmation). Polls the Trip's revision every 3 seconds and only
+ * fetches and re-renders the Trip when it moved.
  */
 export function TripPage({ tripId }: { tripId: string }) {
   const [load, setLoad] = useState<Load>({ state: "loading" });
@@ -39,7 +41,18 @@ export function TripPage({ tripId }: { tripId: string }) {
   }, [refresh]);
 
   usePolling(async () => {
-    if (load.state !== "notFound") await refresh();
+    if (load.state === "notFound") return;
+    if (load.state === "loaded") {
+      try {
+        // Cheap check first: the whole Trip carries its Route line, so only fetch it when something changed.
+        const { revision } = await tripApiClient.getTripRevision(tripId);
+        if (shownRevision.current !== null && revision <= shownRevision.current) return;
+      } catch (error) {
+        if (error instanceof ApiError && error.status === 404) return gone();
+        return;
+      }
+    }
+    await refresh();
   });
 
   if (load.state === "loading") return <TripShell>Loading…</TripShell>;
@@ -171,6 +184,8 @@ function TripDetails({
           </button>
         </div>
       )}
+
+      <RouteMap stops={trip.stops} startStopId={trip.startStopId} route={shownRoute(trip)} />
 
       <StopsSection trip={trip} onTripChanged={onTripChanged} onGone={onGone} />
 

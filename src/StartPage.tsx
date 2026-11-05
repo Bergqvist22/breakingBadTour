@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import type { TripSummaryDto } from "../shared/apiTypes";
+import { formatDrive } from "./format";
 import { followLink, navigate, tripUrl } from "./router";
 import { tripApiClient } from "./tripApiClient";
 import { usePolling } from "./usePolling";
@@ -89,6 +90,10 @@ export function StartPage() {
               <li key={trip.id}>
                 <a href={tripUrl(trip.id)} onClick={followLink}>
                   <span className="trip-name">{trip.name}</span>
+                  <span className="trip-facts">
+                    {trip.stopCount === 1 ? "1 Stop" : `${trip.stopCount} Stops`}
+                    {trip.route && ` · ${formatDrive(trip.route)}`}
+                  </span>
                   <span className="trip-changed">Changed {lastChangedFormat.format(new Date(trip.updatedAt))}</span>
                 </a>
               </li>
