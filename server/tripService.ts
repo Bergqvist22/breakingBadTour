@@ -102,7 +102,7 @@ function requiredName(name: unknown, message: string): string {
 }
 
 const tripName = (name: unknown) => requiredName(name, "A Trip needs a name.");
-const stopName = (name: unknown) => requiredName(name, "Say my name: a Stop needs a name.");
+const stopName = (name: unknown) => requiredName(name, "A Stop needs a name.");
 
 /** A location sent by the client: coordinates in range and an optional address. */
 function stopLocation(value: unknown): StopLocation {

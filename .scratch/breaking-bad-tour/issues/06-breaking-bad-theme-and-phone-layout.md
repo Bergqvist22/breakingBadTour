@@ -1,6 +1,6 @@
 # 06 — Breaking Bad theme + phone layout
 
-**What to build:** The whole app looks and reads like Breaking Bad, and works well on a phone. The New Mexico palette (chemistry green, hazmat yellow, desert sand, crystal blue), an app title styled as periodic-table element tiles, a dark map with a crystal-blue Route line, Stop markers as numbered element tiles, and show-flavoured wording ("Cook up a new Trip", "Say my name", "Tread lightly", and similar). The start page stays free of pictures. On narrow screens, the map sits on top and the Stop list and totals scroll underneath, with touch-sized controls; on wide screens, the map and list sit side by side. No copyrighted images are used in this ticket; the photos come in ticket 07.
+**What to build:** The whole app looks and reads like Breaking Bad, and works well on a phone. The New Mexico palette (chemistry green, hazmat yellow, desert sand, crystal blue), an app title styled as periodic-table element tiles, a dark map with a crystal-blue Route line, Stop markers as numbered element tiles, and show-flavoured wording ("Cook up a new Trip", "Tread lightly", and similar; the Stop name field is labelled plainly "Name of stop"). The start page stays free of pictures. On narrow screens, the map sits on top and the Stop list and totals scroll underneath, with touch-sized controls; on wide screens, the map and list sit side by side. No copyrighted images are used in this ticket; the photos come in ticket 07.
 
 **Blocked by:** 05 — Route
 
